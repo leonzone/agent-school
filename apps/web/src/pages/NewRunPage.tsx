@@ -1,3 +1,8 @@
+import { FieldGroup } from "@/components/ui/field";
+import { Button } from "@/components/ui/button";
+import { Field, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Agent, Installation, TrainedAgent } from "@skillhub/shared";
 import { api } from "../api";
@@ -92,7 +97,7 @@ export function NewRunPage({ skillId, agentId, embedded = false }: { skillId?: s
           <EmptyState
             title={agentId ? "此角色尚未完成培训" : "此课程尚未安装"}
             description={agentId ? "请先在角色详情页创建本机培训项目，再开始测试调试。" : "执行测试需要一个明确的本机安装提交，请先安装课程。"}
-            action={<Link className="button button-primary" to={agentId ? backPath : `/skills/${encodeURIComponent(skillId ?? "")}`}>{agentId ? "前往培训" : "前往安装"}</Link>}
+            action={<Button variant="default" nativeButton={false} render={<Link to={agentId ? backPath : `/skills/${encodeURIComponent(skillId ?? "")}`} />}>{agentId ? "前往培训" : "前往安装"}</Button>}
           />
         ) : null}
       </div>
@@ -122,6 +127,7 @@ export function NewRunPage({ skillId, agentId, embedded = false }: { skillId?: s
       </Notice>
 
       <form className="panel run-form" onSubmit={(event) => { event.preventDefault(); void submit(); }}>
+          <FieldGroup>
         <section className="fixed-run-skill" aria-label="固定测试目标与版本">
           <div><span>{agentId ? "培训角色" : "固定 Skill"}</span><strong>{subjectName}</strong><code>{agentId ?? skillId}</code></div>
           <div><span>{agentId ? "角色 revision" : "固定提交"}</span><code>{agentId ? training?.revision : installation?.commit}</code></div>
@@ -134,36 +140,37 @@ export function NewRunPage({ skillId, agentId, embedded = false }: { skillId?: s
             <p>{training?.skills.length} 个项目 Skills 将与角色指令一起用于本次测试，目录不能在此测试中替换。</p>
           </div>
         ) : (
-          <div className="field">
-            <label htmlFor="run-workspace">绝对工作目录</label>
-            <input id="run-workspace" type="text" value={workspace} onChange={(event) => setWorkspace(event.target.value)} placeholder="/绝对路径/用于测试的项目目录" autoComplete="off" spellCheck={false} required disabled={submitting} />
+          <Field className="field">
+            <FieldLabel htmlFor="run-workspace">绝对工作目录</FieldLabel>
+            <Input id="run-workspace" type="text" value={workspace} onChange={(event) => setWorkspace(event.target.value)} placeholder="/绝对路径/用于测试的项目目录" autoComplete="off" spellCheck={false} required disabled={submitting} />
             <p className="field-help">输入本机目录的绝对路径。成功创建测试后，会在此浏览器记住最近使用的目录。</p>
-          </div>
+          </Field>
         )}
 
-        <div className="field">
-          <label htmlFor="run-task">测试任务</label>
-          <textarea id="run-task" value={task} onChange={(event) => setTask(event.target.value)} placeholder="用自然语言说明希望这个角色完成的任务，以及如何判断结果是否正确" rows={7} maxLength={20000} required disabled={submitting} />
+        <Field className="field">
+          <FieldLabel htmlFor="run-task">测试任务</FieldLabel>
+          <Textarea id="run-task" value={task} onChange={(event) => setTask(event.target.value)} placeholder="用自然语言说明希望这个角色完成的任务，以及如何判断结果是否正确" rows={7} maxLength={20000} required disabled={submitting} />
           <p className="field-help">建议包含目标、约束和验收标准。当前 {task.length} / 20000 字。</p>
-        </div>
+        </Field>
 
-        <div className="field">
-          <label htmlFor="run-materials">测试材料（可多选）</label>
-          <input ref={fileInput} id="run-materials" type="file" multiple onChange={(event) => setFiles(Array.from(event.target.files ?? []))} disabled={submitting} />
+        <Field className="field">
+          <FieldLabel htmlFor="run-materials">测试材料（可多选）</FieldLabel>
+          <Input ref={fileInput} id="run-materials" type="file" multiple onChange={(event) => setFiles(Array.from(event.target.files ?? []))} disabled={submitting} />
           <p className="field-help">可上传文档、数据或示例文件，单个文件不超过 10 MB，最多 10 个。</p>
           {files.length > 0 ? (
             <div className="selected-files">
-              <div className="section-heading"><strong>已选择 {files.length} 个文件</strong><button type="button" className="text-button" onClick={clearFiles} disabled={submitting}>清除材料</button></div>
+              <div className="section-heading"><strong>已选择 {files.length} 个文件</strong><Button variant="ghost" type="button" onClick={clearFiles} disabled={submitting}>清除材料</Button></div>
               <ul className="plain-list">{files.map((file, index) => <li key={`${file.name}-${file.lastModified}-${index}`}><span>{file.name}</span><span>{formatBytes(file.size)}</span></li>)}</ul>
             </div>
           ) : null}
-        </div>
+        </Field>
 
         <div className="form-footer">
           <p>提交后将跳转到实时运行详情，可在那里处理审批或停止测试。</p>
-          <button type="submit" className="button button-primary" disabled={submitting || !task.trim() || (!agentId && !workspace.trim())}>{submitting ? "正在创建测试…" : "开始执行测试"}</button>
+          <Button variant="default" type="submit" disabled={submitting || !task.trim() || (!agentId && !workspace.trim())}>{submitting ? "正在创建测试…" : "开始执行测试"}</Button>
         </div>
-      </form>
+      </FieldGroup>
+</form>
     </div>
   );
 }

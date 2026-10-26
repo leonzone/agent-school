@@ -1,7 +1,9 @@
+import { Button } from "@/components/ui/button";
 import { useCallback, useEffect, useState } from "react";
 import type { SystemStatus } from "@skillhub/shared";
 import { api, initializeSession } from "./api";
-import { Link, NavLink } from "./components/Link";
+import { Link } from "./components/Link";
+import { NavigationMenu, NavigationMenuList, NavigationMenuItem, NavigationMenuLink } from "@/components/ui/navigation-menu";
 import { EnvironmentStatus, SystemStatusContext } from "./components/SystemStatus";
 import { EmptyState, ErrorBanner, LoadingState } from "./components/UI";
 import { AgentDetailPage } from "./pages/AgentDetailPage";
@@ -41,7 +43,7 @@ function RouteContent({ route }: { route: Route }) {
       <EmptyState
         title="没有找到这个页面"
         description="链接可能不完整，或页面地址已经变化。"
-        action={<Link className="button button-primary" to="/">返回学习中心</Link>}
+        action={<Button variant="default" nativeButton={false} render={<Link to="/" />}>返回学习中心</Button>}
       />
     );
   }
@@ -95,14 +97,16 @@ export function App() {
             <span className="brand-mark" aria-hidden="true" />
             <span><strong>Agent School</strong><small>本机职业角色学习中心</small></span>
           </Link>
-          <nav className="main-nav" aria-label="主要导航">
-            <NavLink to="/trainings" activeWhen={(path) => path.startsWith("/trainings")}>我的员工</NavLink>
-            <NavLink to="/" activeWhen={(path) => path === "/" || path.startsWith("/agents")}>培训中心</NavLink>
-            <NavLink to="/skills" activeWhen={(path) => path === "/skills" || (path.startsWith("/skills/") && path !== "/skills/installed")}>能力中心</NavLink>
-            <NavLink to="/runs" activeWhen={(path) => path.startsWith("/runs")}>培训记录</NavLink>
-            <NavLink to="/feedback">团队反馈</NavLink>
-            <NavLink to="/codex">模型管理</NavLink>
-          </nav>
+          <NavigationMenu className="main-nav" aria-label="主要导航">
+            <NavigationMenuList className="flex-wrap">
+              <NavigationMenuItem><NavigationMenuLink active={pathname.startsWith("/trainings")} render={<Link to="/trainings" />}>我的员工</NavigationMenuLink></NavigationMenuItem>
+              <NavigationMenuItem><NavigationMenuLink active={pathname === "/" || pathname.startsWith("/agents")} render={<Link to="/" />}>培训中心</NavigationMenuLink></NavigationMenuItem>
+              <NavigationMenuItem><NavigationMenuLink active={pathname.startsWith("/skills")} render={<Link to="/skills" />}>能力中心</NavigationMenuLink></NavigationMenuItem>
+              <NavigationMenuItem><NavigationMenuLink active={pathname.startsWith("/runs")} render={<Link to="/runs" />}>培训记录</NavigationMenuLink></NavigationMenuItem>
+              <NavigationMenuItem><NavigationMenuLink active={pathname === "/feedback"} render={<Link to="/feedback" />}>团队反馈</NavigationMenuLink></NavigationMenuItem>
+              <NavigationMenuItem><NavigationMenuLink active={pathname === "/codex"} render={<Link to="/codex" />}>模型管理</NavigationMenuLink></NavigationMenuItem>
+            </NavigationMenuList>
+          </NavigationMenu>
           <EnvironmentStatus status={status} />
         </div>
       </header>

@@ -1,3 +1,10 @@
+import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
+import { Field, FieldLabel, FieldGroup } from "@/components/ui/field";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useCallback, useEffect, useState } from "react";
 import type { FeedbackKind, FeedbackRecord, TestOutcome } from "@skillhub/shared";
 import { api } from "../api";
@@ -131,54 +138,58 @@ export function FeedbackPage() {
       </section>
 
       <div className="feedback-layout">
-        <section className="panel feedback-form-panel" aria-labelledby="feedback-form-title">
-          <div className="section-heading"><div><span className="eyebrow">新记录</span><h2 id="feedback-form-title">提交反馈</h2></div></div>
+        <Card className="content-panel feedback-form-panel" aria-labelledby="feedback-form-title">
+          <CardHeader><div><span className="eyebrow">新记录</span><h2 id="feedback-form-title">提交反馈</h2></div></CardHeader>
+          <CardContent>
           {form.runId ? <Notice>已从运行结果预填课程、提交和测试编号，提交后会保持关联。</Notice> : null}
           {error ? <ErrorBanner message={error} onRetry={() => void load()} /> : null}
           {message ? <Notice tone="success">{message}</Notice> : null}
           <form className="feedback-form" onSubmit={(event) => { event.preventDefault(); void submit(); }}>
-            <div className="field">
-              <label htmlFor="feedback-kind">反馈类型</label>
-              <select id="feedback-kind" value={form.kind} onChange={(event) => updateForm("kind", event.target.value as FeedbackKind)} disabled={submitting}>
-                <option value="issue">问题</option>
-                <option value="suggestion">建议</option>
-                <option value="praise">表扬</option>
-              </select>
-            </div>
-            <div className="field">
-              <label htmlFor="feedback-author">署名（留空即匿名）</label>
-              <input id="feedback-author" value={form.author} onChange={(event) => updateForm("author", event.target.value)} maxLength={80} placeholder="你的称呼" disabled={submitting} />
-            </div>
-            <div className="field">
-              <label htmlFor="feedback-content">反馈内容</label>
-              <textarea id="feedback-content" value={form.content} onChange={(event) => updateForm("content", event.target.value)} rows={6} maxLength={5000} required placeholder="描述具体问题、复现条件、改进建议或值得肯定的体验" disabled={submitting} />
+          <FieldGroup>
+            <Field className="field">
+              <FieldLabel htmlFor="feedback-kind">反馈类型</FieldLabel>
+              <NativeSelect className="w-full" id="feedback-kind" value={form.kind} onChange={(event) => updateForm("kind", event.target.value as FeedbackKind)} disabled={submitting}>
+                <NativeSelectOption value="issue">问题</NativeSelectOption>
+                <NativeSelectOption value="suggestion">建议</NativeSelectOption>
+                <NativeSelectOption value="praise">表扬</NativeSelectOption>
+              </NativeSelect>
+            </Field>
+            <Field className="field">
+              <FieldLabel htmlFor="feedback-author">署名（留空即匿名）</FieldLabel>
+              <Input id="feedback-author" value={form.author} onChange={(event) => updateForm("author", event.target.value)} maxLength={80} placeholder="你的称呼" disabled={submitting} />
+            </Field>
+            <Field className="field">
+              <FieldLabel htmlFor="feedback-content">反馈内容</FieldLabel>
+              <Textarea id="feedback-content" value={form.content} onChange={(event) => updateForm("content", event.target.value)} rows={6} maxLength={5000} required placeholder="描述具体问题、复现条件、改进建议或值得肯定的体验" disabled={submitting} />
               <p className="field-help">{form.content.length} / 5000 字</p>
-            </div>
-            <div className="form-two-columns">
-              <div className="field">
-                <label htmlFor="feedback-skill">Skill ID</label>
-                <input id="feedback-skill" value={form.skillId} onChange={(event) => updateForm("skillId", event.target.value)} pattern="[a-z0-9][a-z0-9-]{0,63}" required spellCheck={false} disabled={submitting} />
-              </div>
-              <div className="field">
-                <label htmlFor="feedback-outcome">关联验收结论</label>
-                <select id="feedback-outcome" value={form.outcome} onChange={(event) => updateForm("outcome", event.target.value as TestOutcome | "")} disabled={submitting}>
-                  <option value="">不关联结论</option>
-                  <option value="passed">达到预期</option>
-                  <option value="failed">未达到预期</option>
-                </select>
-              </div>
-            </div>
-            <div className="field">
-              <label htmlFor="feedback-commit">Skill 提交（完整 40 位）</label>
-              <input id="feedback-commit" value={form.skillCommit} onChange={(event) => updateForm("skillCommit", event.target.value)} pattern="[0-9a-f]{40}" minLength={40} maxLength={40} required spellCheck={false} disabled={submitting} />
-            </div>
-            <div className="field">
-              <label htmlFor="feedback-run">关联测试编号（可选）</label>
-              <input id="feedback-run" value={form.runId} onChange={(event) => updateForm("runId", event.target.value)} spellCheck={false} placeholder="测试记录 UUID" disabled={submitting} />
-            </div>
-            <button type="submit" className="button button-primary button-block" disabled={submitting || !form.content.trim()}>{submitting ? "正在保存…" : "保存反馈"}</button>
-          </form>
-        </section>
+            </Field>
+            <FieldGroup className="form-two-columns">
+              <Field className="field">
+                <FieldLabel htmlFor="feedback-skill">Skill ID</FieldLabel>
+                <Input id="feedback-skill" value={form.skillId} onChange={(event) => updateForm("skillId", event.target.value)} pattern="[a-z0-9][a-z0-9-]{0,63}" required spellCheck={false} disabled={submitting} />
+              </Field>
+              <Field className="field">
+                <FieldLabel htmlFor="feedback-outcome">关联验收结论</FieldLabel>
+                <NativeSelect className="w-full" id="feedback-outcome" value={form.outcome} onChange={(event) => updateForm("outcome", event.target.value as TestOutcome | "")} disabled={submitting}>
+                  <NativeSelectOption value="">不关联结论</NativeSelectOption>
+                  <NativeSelectOption value="passed">达到预期</NativeSelectOption>
+                  <NativeSelectOption value="failed">未达到预期</NativeSelectOption>
+                </NativeSelect>
+              </Field>
+            </FieldGroup>
+            <Field className="field">
+              <FieldLabel htmlFor="feedback-commit">Skill 提交（完整 40 位）</FieldLabel>
+              <Input id="feedback-commit" value={form.skillCommit} onChange={(event) => updateForm("skillCommit", event.target.value)} pattern="[0-9a-f]{40}" minLength={40} maxLength={40} required spellCheck={false} disabled={submitting} />
+            </Field>
+            <Field className="field">
+              <FieldLabel htmlFor="feedback-run">关联测试编号（可选）</FieldLabel>
+              <Input id="feedback-run" value={form.runId} onChange={(event) => updateForm("runId", event.target.value)} spellCheck={false} placeholder="测试记录 UUID" disabled={submitting} />
+            </Field>
+            <Button variant="default" type="submit" className="w-full" disabled={submitting || !form.content.trim()}>{submitting ? "正在保存…" : "保存反馈"}</Button>
+          </FieldGroup>
+</form>
+          </CardContent>
+        </Card>
 
         <section className="feedback-list-panel" aria-labelledby="feedback-list-title">
           <div className="section-heading">
@@ -186,27 +197,27 @@ export function FeedbackPage() {
             <span className="muted">{records.length} 条</span>
           </div>
           <form className="filter-bar" onSubmit={(event) => { event.preventDefault(); applyFilters(); }}>
-            <div className="field"><label htmlFor="filter-skill">按 Skill 过滤</label><input id="filter-skill" value={filterSkill} onChange={(event) => setFilterSkill(event.target.value)} placeholder="完整 Skill ID" /></div>
-            <div className="field"><label htmlFor="filter-commit">按提交过滤</label><input id="filter-commit" value={filterCommit} onChange={(event) => setFilterCommit(event.target.value)} placeholder="完整 40 位提交" minLength={0} maxLength={40} spellCheck={false} /></div>
-            <div className="button-row"><button type="submit" className="button button-secondary">应用过滤</button><button type="button" className="button button-ghost" onClick={clearFilters}>清空</button></div>
+            <Field className="field"><FieldLabel htmlFor="filter-skill">按 Skill 过滤</FieldLabel><Input id="filter-skill" value={filterSkill} onChange={(event) => setFilterSkill(event.target.value)} placeholder="完整 Skill ID" /></Field>
+            <Field className="field"><FieldLabel htmlFor="filter-commit">按提交过滤</FieldLabel><Input id="filter-commit" value={filterCommit} onChange={(event) => setFilterCommit(event.target.value)} placeholder="完整 40 位提交" minLength={0} maxLength={40} spellCheck={false} /></Field>
+            <div className="button-row"><Button variant="outline" type="submit">应用过滤</Button><Button variant="ghost" type="button" onClick={clearFilters}>清空</Button></div>
           </form>
           {loading ? <LoadingState label="正在读取团队反馈" /> : null}
           {!loading && records.length === 0 ? <EmptyState title="没有反馈记录" description={filters.skillId || filters.skillCommit ? "当前过滤条件下没有记录，可以清空过滤后再查看。" : "提交第一条反馈，帮助维护人改进课程。"} /> : null}
           <div className="feedback-list">
             {records.map((record) => (
-              <article className="panel feedback-card" key={record.id}>
-                <div className="card-topline">
-                  <span className={`badge feedback-${record.kind}`}>{kindLabels[record.kind]}</span>
+              <Card key={record.id}>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <Badge variant="secondary">{kindLabels[record.kind]}</Badge>
                   <time dateTime={record.createdAt}>{formatDate(record.createdAt)}</time>
-                </div>
-                <p className="feedback-content">{record.content}</p>
-                <div className="feedback-meta">
+                </CardHeader>
+                <CardContent><p className="feedback-content">{record.content}</p></CardContent>
+                <CardFooter className="flex-wrap gap-3">
                   <span>{record.author || "匿名"}</span>
                   <span><code>{record.skillId}</code> · <code>{shortCommit(record.skillCommit)}</code></span>
                   {record.outcome ? <span>{record.outcome === "passed" ? "达到预期" : "未达到预期"}</span> : null}
                   {record.runId ? <Link className="text-link" to={`/runs/${encodeURIComponent(record.runId)}`}>查看关联测试</Link> : null}
-                </div>
-              </article>
+                </CardFooter>
+              </Card>
             ))}
           </div>
         </section>

@@ -1,4 +1,10 @@
+import { Button } from "@/components/ui/button";
+import { FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import type { CatalogResponse, Installation } from "@skillhub/shared";
 import { api } from "../api";
 import { SkillCard, skillCategory } from "../components/SkillCard";
@@ -115,50 +121,51 @@ export function CatalogPage() {
         title="能力中心"
         description="按任务选择团队技能，安装到本机 Codex，让日常工作更顺手。"
         actions={(
-          <button type="button" className="button button-secondary" onClick={() => void sync()} disabled={syncing}>
+          <Button variant="outline" type="button" onClick={() => void sync()} disabled={syncing}>
             {syncing ? "正在刷新…" : "刷新目录"}
-          </button>
+          </Button>
         )}
       />
 
-      <div className="category-tabs" aria-label="能力中心分类">
-        <button type="button" className="category-tab" aria-pressed={activeTab === "skills"} onClick={() => setActiveTab("skills")}>Skills</button>
-        <button type="button" className="category-tab" aria-pressed={activeTab === "mcp"} onClick={() => setActiveTab("mcp")}>MCP</button>
-        <button type="button" className="category-tab" aria-pressed={activeTab === "connectors"} onClick={() => setActiveTab("connectors")}>连接器</button>
-      </div>
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as typeof activeTab)}>
+      <TabsList variant="line" aria-label="能力中心分类">
+        <TabsTrigger value="skills">Skills</TabsTrigger>
+        <TabsTrigger value="mcp">MCP</TabsTrigger>
+        <TabsTrigger value="connectors">连接器</TabsTrigger>
+      </TabsList>
 
       {activeTab !== "skills" ? (
-        <EmptyState
+        <TabsContent value={activeTab}><EmptyState
           title={activeTab === "mcp" ? "MCP 服务即将上线" : "连接器即将上线"}
           description={activeTab === "mcp" ? "后续将在这里集中管理本机可用的 MCP 服务。" : "后续将在这里集中管理外部系统的连接器。"}
-        />
+        /></TabsContent>
       ) : (
-      <>
+      <TabsContent value="skills">
 
       <div className="skills-toolbar">
         <form className="search-bar" onSubmit={(event) => { event.preventDefault(); search(); }} role="search">
-          <label className="sr-only" htmlFor="catalog-search">搜索 Skills</label>
-          <input
+          <FieldLabel className="sr-only" htmlFor="catalog-search">搜索 Skills</FieldLabel>
+          <Input
             id="catalog-search"
             type="search"
             value={input}
             onChange={(event) => setInput(event.target.value)}
             placeholder="搜索技能、描述或来源"
           />
-          <button type="submit" className="button button-ghost" disabled={loading || syncing}>搜索</button>
-          {input || query ? <button type="button" className="button button-ghost" onClick={clear}>清空</button> : null}
+          <Button variant="ghost" type="submit" disabled={loading || syncing}>搜索</Button>
+          {input || query ? <Button variant="ghost" type="button" onClick={clear}>清空</Button> : null}
         </form>
-        <label className="installed-filter">
-          <input type="checkbox" checked={onlyInstalled} onChange={(event) => setOnlyInstalled(event.target.checked)} />
+        <FieldLabel className="installed-filter">
+          <Checkbox  checked={onlyInstalled} onCheckedChange={(checked) => setOnlyInstalled(checked)} />
           仅看已安装
-        </label>
+        </FieldLabel>
       </div>
 
-      <div className="category-tabs" aria-label="Skill 分类">
+      <ToggleGroup className="mb-4 flex-wrap" value={[category]} onValueChange={(values) => { if (values[0]) setCategory(values[0]); }} aria-label="Skill 分类">
         {categories.map((item) => (
-          <button type="button" className="category-tab" aria-pressed={category === item} onClick={() => setCategory(item)} key={item}>{item}</button>
+          <ToggleGroupItem value={item} key={item}>{item}</ToggleGroupItem>
         ))}
-      </div>
+      </ToggleGroup>
 
       <div className="list-meta" aria-live="polite">
         <span>{catalog ? `${visibleSkills.length} 个 Skills` : "正在读取 Skills"}</span>
@@ -174,7 +181,7 @@ export function CatalogPage() {
         <EmptyState
           title={onlyInstalled ? "没有符合条件的已安装 Skill" : query ? "没有匹配的 Skill" : "课程库还是空的"}
           description={query || onlyInstalled || category !== "全部" ? "试试其他关键词，或切换分类查看全部技能。" : "点击“刷新目录”从团队课程仓库同步最新内容。"}
-          action={query ? <button type="button" className="button button-secondary" onClick={clear}>清空搜索</button> : null}
+          action={query ? <Button variant="outline" type="button" onClick={clear}>清空搜索</Button> : null}
         />
       ) : null}
 
@@ -200,8 +207,9 @@ export function CatalogPage() {
           </div>
         </section>
       ))}
-      </>
+      </TabsContent>
       )}
+      </Tabs>
     </div>
   );
 }

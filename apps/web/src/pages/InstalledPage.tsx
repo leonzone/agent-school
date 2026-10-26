@@ -1,3 +1,6 @@
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
+import { Button } from "@/components/ui/button";
 import { useCallback, useEffect, useState } from "react";
 import type { Installation, SkillSummary } from "@skillhub/shared";
 import { api } from "../api";
@@ -98,7 +101,7 @@ export function InstalledPage() {
       <PageHeader
         title="我的技能"
         description="管理安装到本机 Codex 的技能版本，执行测试、更新或卸载。"
-        actions={<button type="button" className="button button-secondary" onClick={() => void load()} disabled={loading}>重新检查</button>}
+        actions={<Button variant="outline" type="button" onClick={() => void load()} disabled={loading}>重新检查</Button>}
       />
       <div className="list-meta"><span>{installations.length} 个已安装 Skills</span><span>每台设备独立管理</span></div>
       {error ? <ErrorBanner message={error} onRetry={() => void load()} /> : null}
@@ -110,7 +113,7 @@ export function InstalledPage() {
         <EmptyState
           title="还没有安装 Skills"
           description="从团队目录选择适合工作的技能，安装后即可在这里管理和测试。"
-          action={<Link className="button button-primary" to="/skills">浏览 Skills</Link>}
+          action={<Button variant="default" nativeButton={false} render={<Link to="/skills" />}>浏览 Skills</Button>}
         />
       ) : null}
 
@@ -123,34 +126,34 @@ export function InstalledPage() {
               const busy = operation?.startsWith(`${installation.skillId}:`) ?? false;
               return (
                 <SkillCard skill={skill} installation={installation} busy={busy} key={installation.skillId}>
-                  <details className="skill-install-details">
-                    <summary>版本与安装信息</summary>
+                  <Collapsible className="skill-install-details">
+                    <CollapsibleTrigger render={<Button variant="ghost" className="w-full justify-start" />}>版本与安装信息</CollapsibleTrigger><CollapsibleContent>
                     <dl>
                       <div><dt>当前提交</dt><dd><code>{installation.commit}</code></dd></div>
                       <div><dt>安装路径</dt><dd><code>{installation.path}</code></dd></div>
                       <div><dt>最近更新</dt><dd>{formatDate(installation.updatedAt)}</dd></div>
                       {latest ? <div><dt>目录最新</dt><dd><code>{shortCommit(latest.commit)}</code> · {latest.subject}</dd></div> : null}
                     </dl>
-                  </details>
+                  </CollapsibleContent></Collapsible>
                   {installation.locallyModified ? <p className="inline-warning">检测到本地修改，更新和卸载已阻止。请先备份并处理这些修改。</p> : null}
                   {confirmId === installation.skillId ? (
-                    <div className="confirm-box" role="alert">
-                      <strong>确认卸载“{installation.skillName}”？</strong>
-                      <p>只会移除本机 Skill，已有测试记录会保留。</p>
+                    <Alert variant="destructive">
+                      <AlertTitle>确认卸载“{installation.skillName}”？</AlertTitle>
+                      <AlertDescription>只会移除本机 Skill，已有测试记录会保留。</AlertDescription>
                       <div className="button-row">
-                        <button type="button" className="button button-danger button-small" onClick={() => void uninstall(installation)} disabled={busy}>{busy ? "正在卸载…" : "确认卸载"}</button>
-                        <button type="button" className="button button-secondary button-small" onClick={() => setConfirmId(null)} disabled={busy}>取消</button>
+                        <Button variant="destructive" size="sm" type="button" onClick={() => void uninstall(installation)} disabled={busy}>{busy ? "正在卸载…" : "确认卸载"}</Button>
+                        <Button variant="outline" size="sm" type="button" onClick={() => setConfirmId(null)} disabled={busy}>取消</Button>
                       </div>
-                    </div>
+                    </Alert>
                   ) : null}
                   <div className="installed-card-actions">
-                    <Link className="button button-primary button-small" to={`/runs/new/${encodeURIComponent(installation.skillId)}`}>执行测试</Link>
+                    <Button variant="default" size="sm" nativeButton={false} render={<Link to={`/runs/new/${encodeURIComponent(installation.skillId)}`} />}>执行测试</Button>
                     {hasUpdate && latest ? (
-                      <button type="button" className="button button-secondary button-small" onClick={() => void update(installation, latest.commit)} disabled={busy || installation.locallyModified}>
+                      <Button variant="outline" size="sm" type="button" onClick={() => void update(installation, latest.commit)} disabled={busy || installation.locallyModified}>
                         {operation === `${installation.skillId}:update` ? "正在更新…" : `更新到 ${shortCommit(latest.commit)}`}
-                      </button>
+                      </Button>
                     ) : null}
-                    <button type="button" className="text-button button-danger-text" onClick={() => setConfirmId(installation.skillId)} disabled={busy || installation.locallyModified}>卸载</button>
+                    <Button variant="destructive" type="button" onClick={() => setConfirmId(installation.skillId)} disabled={busy || installation.locallyModified}>卸载</Button>
                   </div>
                 </SkillCard>
               );

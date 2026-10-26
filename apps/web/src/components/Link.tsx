@@ -1,9 +1,9 @@
 import type { AnchorHTMLAttributes, MouseEvent, ReactNode } from "react";
-import { navigate, useLocation } from "../router";
+import { navigate } from "../router";
 
 type LinkProps = Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "href"> & {
   to: string;
-  children: ReactNode;
+  children?: ReactNode;
 };
 
 export function Link({ to, children, onClick, ...props }: LinkProps) {
@@ -23,14 +23,4 @@ export function Link({ to, children, onClick, ...props }: LinkProps) {
   }
 
   return <a href={to} onClick={handleClick} {...props}>{children}</a>;
-}
-
-type NavLinkProps = LinkProps & {
-  activeWhen?: (pathname: string) => boolean;
-};
-
-export function NavLink({ activeWhen, ...props }: NavLinkProps) {
-  const { pathname } = useLocation();
-  const active = activeWhen?.(pathname) ?? pathname === props.to;
-  return <Link {...props} aria-current={active ? "page" : undefined} />;
 }

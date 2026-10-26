@@ -1,3 +1,7 @@
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Field, FieldLabel } from "@/components/ui/field";
+import { Textarea } from "@/components/ui/textarea";
 import { useCallback, useEffect, useState } from "react";
 import type { ApprovalRequest, RunDetail, RunEvent, TestOutcome } from "@skillhub/shared";
 import { api, initializeSession } from "../api";
@@ -216,8 +220,8 @@ export function RunDetailPage({ id }: { id: string }) {
         actions={(
           <div className="button-row">
             <RunStatusBadge status={detail.status} />
-            {detail.agent && !isActiveStatus(detail.status) ? <Link className="button button-secondary" to={`/agents/${encodeURIComponent(detail.agent.id)}/test`}>再次调试</Link> : null}
-            {isActiveStatus(detail.status) ? <button type="button" className="button button-danger" onClick={() => void stop()} disabled={stopping}>{stopping ? "正在停止…" : "停止测试"}</button> : null}
+            {detail.agent && !isActiveStatus(detail.status) ? <Button variant="outline" nativeButton={false} render={<Link to={`/agents/${encodeURIComponent(detail.agent.id)}/test`} />}>再次调试</Button> : null}
+            {isActiveStatus(detail.status) ? <Button variant="destructive" type="button" onClick={() => void stop()} disabled={stopping}>{stopping ? "正在停止…" : "停止测试"}</Button> : null}
           </div>
         )}
       />
@@ -229,11 +233,12 @@ export function RunDetailPage({ id }: { id: string }) {
 
       <Approvals runId={id} approvals={approvals} onChange={setApprovals} onRunUpdated={refreshDetail} />
 
-      <section className="panel" aria-labelledby="run-summary-title">
-        <div className="section-heading">
+      <Card className="content-panel" aria-labelledby="run-summary-title">
+        <CardHeader>
           <div><span className="eyebrow">固定上下文</span><h2 id="run-summary-title">运行信息</h2></div>
           <OutcomeBadge outcome={detail.outcome} />
-        </div>
+        </CardHeader>
+        <CardContent>
         <dl className="definition-grid">
           <Definition label="任务" wide><p className="pre-wrap">{detail.task}</p></Definition>
           <Definition label="工作目录" wide><code className="break-all">{detail.workspace}</code></Definition>
@@ -262,34 +267,39 @@ export function RunDetailPage({ id }: { id: string }) {
             </ul>
           </div>
         ) : null}
-      </section>
+        </CardContent>
+      </Card>
 
       {detail.finalText ? (
-        <section className="panel" aria-labelledby="final-answer-title">
-          <div className="section-heading"><div><span className="eyebrow">Codex 最终输出</span><h2 id="final-answer-title">最终回复</h2></div></div>
+        <Card className="content-panel" aria-labelledby="final-answer-title">
+          <CardHeader><div><span className="eyebrow">Codex 最终输出</span><h2 id="final-answer-title">最终回复</h2></div></CardHeader>
+          <CardContent>
           <Markdown>{detail.finalText}</Markdown>
-        </section>
+          </CardContent>
+        </Card>
       ) : null}
 
       {detail.status === "completed" ? (
-        <section className="panel outcome-panel" aria-labelledby="outcome-title">
-          <div className="section-heading">
+        <Card className="content-panel outcome-panel" aria-labelledby="outcome-title">
+          <CardHeader>
             <div><span className="eyebrow">人工验收</span><h2 id="outcome-title">结果是否符合预期</h2></div>
             <OutcomeBadge outcome={detail.outcome} />
-          </div>
+          </CardHeader>
+          <CardContent>
           <p>请结合实际工作区文件和 Codex 回复判断。这个结论由你明确提交，不会自动推断。</p>
-          <div className="field">
-            <label htmlFor="outcome-note">验收备注</label>
-            <textarea id="outcome-note" value={outcomeNote} onChange={(event) => setOutcomeNote(event.target.value)} rows={3} maxLength={2000} placeholder="记录验证依据、偏差或后续建议" disabled={outcomePending} />
-          </div>
+          <Field className="field">
+            <FieldLabel htmlFor="outcome-note">验收备注</FieldLabel>
+            <Textarea id="outcome-note" value={outcomeNote} onChange={(event) => setOutcomeNote(event.target.value)} rows={3} maxLength={2000} placeholder="记录验证依据、偏差或后续建议" disabled={outcomePending} />
+          </Field>
           <div className="form-footer">
-            <Link className="button button-secondary" to={`/feedback?${feedbackQuery.toString()}`}>反馈此结果</Link>
+            <Button variant="outline" nativeButton={false} render={<Link to={`/feedback?${feedbackQuery.toString()}`} />}>反馈此结果</Button>
             <div className="button-row">
-              <button type="button" className="button button-secondary" onClick={() => void submitOutcome("failed")} disabled={outcomePending}>未达到预期</button>
-              <button type="button" className="button button-primary" onClick={() => void submitOutcome("passed")} disabled={outcomePending}>{outcomePending ? "正在提交…" : "达到预期"}</button>
+              <Button variant="outline" type="button" onClick={() => void submitOutcome("failed")} disabled={outcomePending}>未达到预期</Button>
+              <Button variant="default" type="button" onClick={() => void submitOutcome("passed")} disabled={outcomePending}>{outcomePending ? "正在提交…" : "达到预期"}</Button>
             </div>
           </div>
-        </section>
+          </CardContent>
+        </Card>
       ) : null}
 
       <RunFiles runId={id} files={detail.files} />

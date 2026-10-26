@@ -1,3 +1,5 @@
+import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { useCallback, useEffect, useState } from "react";
 import type { RunSummary } from "@skillhub/shared";
 import { api } from "../api";
@@ -45,8 +47,8 @@ export function RunsPage() {
         description="查看每次角色或 Skill 测试的固定版本、运行状态、最终结果和人工验收结论。"
         actions={(
           <div className="button-row">
-            <button type="button" className="button button-secondary" onClick={() => void load(true)} disabled={refreshing}>{refreshing ? "正在刷新…" : "刷新记录"}</button>
-            <Link className="button button-primary" to="/trainings">新建测试</Link>
+            <Button variant="outline" type="button" onClick={() => void load(true)} disabled={refreshing}>{refreshing ? "正在刷新…" : "刷新记录"}</Button>
+            <Button variant="default" nativeButton={false} render={<Link to="/trainings" />}>新建测试</Button>
           </div>
         )}
       />
@@ -56,20 +58,22 @@ export function RunsPage() {
         <EmptyState
           title="还没有测试记录"
           description="从已培训角色发起一次测试，运行过程和结果会保存在这里。"
-          action={<Link className="button button-primary" to="/trainings">选择培训角色</Link>}
+          action={<Button variant="default" nativeButton={false} render={<Link to="/trainings" />}>选择培训角色</Button>}
         />
       ) : null}
 
       <div className="run-list">
         {runs.map((run) => (
-          <article className="panel run-card" key={run.id}>
-            <div className="run-card-main">
+          <Card key={run.id}>
+            <CardHeader>
               <div className="card-topline">
-                <Link className="run-title" to={`/runs/${encodeURIComponent(run.id)}`}>{run.agent?.name ?? run.skillName}</Link>
+                <CardTitle><Link to={`/runs/${encodeURIComponent(run.id)}`}>{run.agent?.name ?? run.skillName}</Link></CardTitle>
                 <RunStatusBadge status={run.status} />
                 <OutcomeBadge outcome={run.outcome} />
               </div>
-              <p className="run-task">{run.task}</p>
+              <CardDescription>{run.task}</CardDescription>
+            </CardHeader>
+            <CardContent>
               <div className="run-card-meta">
                 <span>{run.agent ? `角色 revision ${run.agent.revision}` : <>提交 <code>{shortCommit(run.skillCommit)}</code></>}</span>
                 <span>创建：{formatDate(run.createdAt)}</span>
@@ -77,9 +81,11 @@ export function RunsPage() {
               </div>
               {run.finalText ? <p className="run-result"><strong>最终回复：</strong>{run.finalText}</p> : null}
               {run.error ? <p className="run-error"><strong>错误：</strong>{run.error}</p> : null}
-            </div>
-            <Link className="button button-secondary button-small" to={`/runs/${encodeURIComponent(run.id)}`}>查看详情</Link>
-          </article>
+            </CardContent>
+            <CardFooter className="justify-end">
+            <Button variant="outline" size="sm" nativeButton={false} render={<Link to={`/runs/${encodeURIComponent(run.id)}`} />}>查看详情</Button>
+            </CardFooter>
+          </Card>
         ))}
       </div>
     </div>

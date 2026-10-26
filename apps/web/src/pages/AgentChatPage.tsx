@@ -12,25 +12,21 @@ import type {
 import { api, ApiError, initializeSession } from "../api";
 import { Approvals } from "../components/Approvals";
 import { ChatComposerEditor, type ChatComposerEditorHandle } from "../components/ChatComposerEditor";
-import { Link } from "../components/Link";
 import { Markdown } from "../components/Markdown";
 import { RunFiles } from "../components/RunFiles";
-import { Timeline } from "../components/Timeline";
+import { AgentActivity, RunHistory, eventKinds } from "../components/ai-elements/AgentActivity";
+import { ChoiceMenu } from "../components/ai-elements/ChoiceMenu";
+import { Button } from "../components/ui/button";
+import { InputGroup, InputGroupAddon, InputGroupButton } from "../components/ui/input-group";
+import { Message, MessageContent, MessageHeader, MessageFooter } from "../components/ui/message";
+import { Bubble, BubbleContent } from "../components/ui/bubble";
+import { MessageScrollerProvider, MessageScroller, MessageScrollerViewport, MessageScrollerContent, MessageScrollerItem, MessageScrollerButton } from "../components/ui/message-scroller";
+import { ConversationIndex } from "../components/ai-elements/ConversationIndex";
+import { Attachment, AttachmentGroup, AttachmentMedia, AttachmentContent, AttachmentTitle, AttachmentDescription, AttachmentActions, AttachmentAction } from "../components/ui/attachment";
+import { Empty, EmptyHeader, EmptyTitle, EmptyDescription } from "../components/ui/empty";
+import { CopyIcon, ArrowUpIcon, SquareIcon, PaperclipIcon, XIcon, FileIcon } from "lucide-react";
 import { ErrorBanner, LoadingState, Notice, RunStatusBadge } from "../components/UI";
 import { agentAvatar, asRecord, errorMessage, formatBytes, isActiveStatus, isRunEvent } from "../utils";
-
-const eventKinds = [
-  "status",
-  "meta",
-  "outcome",
-  "notification",
-  "approval",
-  "approvalDecision",
-  "files",
-  "phase",
-  "warning",
-  "codexStderr",
-];
 
 const supportedImageMimes = new Set(["image/png", "image/jpeg", "image/webp", "image/gif"]);
 const maxAttachmentCount = 10;
@@ -78,12 +74,14 @@ function runOptions(run: RunSummary): ComposerOptions | null {
   };
 }
 
-export function AgentChatPage({ agent, training, onAvatarClick, configOpen = false }: {
+export function AgentChatPage({ agent, training, onAvatarClick, onMessagePreview, configOpen = false }: {
   agent: Agent;
   training: TrainedAgent;
   onAvatarClick?: (() => void) | undefined;
   configOpen?: boolean | undefined;
+  onMessagePreview?: ((agentId: string, text: string) => void) | undefined;
 }) {
+  const conversationIdRef = useRef<string | null>(null);
   const [detail, setDetail] = useState<ConversationDetail | null>(null);
   const [runDetails, setRunDetails] = useState<Record<string, RunDetail>>({});
   const [detailLoading, setDetailLoading] = useState(true);
@@ -129,6 +127,13 @@ export function AgentChatPage({ agent, training, onAvatarClick, configOpen = fal
   const selectedModel = codexConfig?.models.find((candidate) => candidate.model === model) ?? null;
   const composerDisabled = !visibleDetail || sending || active;
   const settingsDisabled = composerDisabled || codexLoading;
+
+  useEffect(() => {
+    const latest = visibleDetail?.runs.at(-1);
+    if (!latest) return;
+    const run = runDetails[latest.id] ?? latest;
+    onMessagePreview?.(agent.id, run.finalText || run.task);
+  }, [agent.id, visibleDetail, runDetails, onMessagePreview]);
 
   const replaceAttachments = useCallback((next: ComposerAttachment[]) => {
     attachmentsRef.current = next;
@@ -228,15 +233,18 @@ export function AgentChatPage({ agent, training, onAvatarClick, configOpen = fal
       setDetailError(null);
     }
     try {
-      const data = await api.ensureConversation(requestedAgentId);
+      const requestedConversationId = conversationIdRef.current;
+      const data = requestedConversationId ? await api.conversation(requestedConversationId) : await api.ensureConversation(requestedAgentId);
       const details = await Promise.all(data.runs.map(async (run) => {
         try {
           return await api.run(run.id);
-        } catch {
+        } catch (error) {
+          if (mounted.current && currentAgentId.current === requestedAgentId) setActionError(`运行详情读取失败：${errorMessage(error)}`);
           return null;
         }
       }));
-      if (!mounted.current || currentAgentId.current !== requestedAgentId) return null;
+      if (!mounted.current || currentAgentId.current !== requestedAgentId || conversationIdRef.current !== requestedConversationId) return null;
+      conversationIdRef.current = data.conversation.id;
       setDetail(data);
       setRunDetails((current) => {
         const next = { ...current };
@@ -261,6 +269,7 @@ export function AgentChatPage({ agent, training, onAvatarClick, configOpen = fal
   }, [agent.id]);
 
   useEffect(() => {
+    conversationIdRef.current = null;
     setDetail(null);
     setRunDetails({});
     setActiveRunId(null);
@@ -272,6 +281,7 @@ export function AgentChatPage({ agent, training, onAvatarClick, configOpen = fal
     setSending(false);
     setStopping(false);
     setTask("");
+    setSelectedSkillIds([]);
     setPermissionMode("workspace");
     setSkillsOpen(false);
     clearAttachments();
@@ -438,6 +448,7 @@ export function AgentChatPage({ agent, training, onAvatarClick, configOpen = fal
       setRunDetails((current) => ({ ...current, [run.id]: run }));
       setActiveRunId(run.id);
       setTask("");
+      setSelectedSkillIds([]);
       clearAttachments();
       await refreshConversation();
     } catch (error) {
@@ -450,7 +461,7 @@ export function AgentChatPage({ agent, training, onAvatarClick, configOpen = fal
   }
 
   async function stop() {
-    if (!activeRunId || stopping || !window.confirm("确认停止当前回复？已产生的文件和聊天记录会保留。")) return;
+    if (!activeRunId || stopping) return;
     setStopping(true);
     setActionError(null);
     try {
@@ -464,84 +475,75 @@ export function AgentChatPage({ agent, training, onAvatarClick, configOpen = fal
     }
   }
 
+  async function copyReply(text: string) {
+    try { await navigator.clipboard.writeText(text); }
+    catch { setActionError("复制失败，请检查浏览器剪贴板权限。"); }
+  }
+
   return (
     <section className="chat-main employee-chat-main" aria-label={`${agent.name} 的员工对话`}>
-      <header className="chat-context">
-        <div className="chat-agent-identity">
-          {onAvatarClick ? (
-            <button
-              type="button"
-              className="employee-avatar employee-avatar-button chat-agent-avatar"
-              onClick={onAvatarClick}
-              aria-expanded={configOpen}
-              aria-controls="employee-config"
-              aria-label={`${configOpen ? "隐藏" : "显示"}${agent.name}的员工配置`}
-            >
-              <span aria-hidden="true">{agentAvatar(agent)}</span>
-            </button>
-          ) : <span className="employee-avatar chat-agent-avatar" aria-hidden="true">{agentAvatar(agent)}</span>}
-          <h2>{agent.name}</h2>
-        </div>
+      <header className="agent-chat-header">
+        <Button className="agent-chat-identity" variant="outline" onClick={onAvatarClick} aria-label={configOpen ? "隐藏员工配置" : "显示员工配置"} aria-expanded={configOpen} aria-controls="employee-config" title={training.projectPath}>
+          <span className="employee-avatar" aria-hidden="true">{agentAvatar(agent)}</span><strong>{agent.name}</strong>
+        </Button>
+        <span className="agent-chat-status" role="status">{active ? "正在回复…" : sending ? "正在发送…" : ""}</span>
       </header>
       {actionError ? <ErrorBanner message={actionError} /> : null}
       {revisionUpdated ? <Notice><span>历史聊天保留，新回复使用最新培训上下文</span></Notice> : null}
 
-      <div className="chat-transcript">
-        {detailLoading && !visibleDetail ? <LoadingState label="正在进入员工会话" /> : null}
-        {detailError ? <ErrorBanner message={detailError} onRetry={() => void refreshConversation(true)} /> : null}
-        {visibleDetail && visibleDetail.runs.length === 0 ? (
-          <div className="chat-welcome"><strong>向 {agent.name} 发送第一条消息</strong><p>可以描述工作任务，也可以附上文档、数据或示例文件。</p></div>
-        ) : null}
-        {visibleDetail?.runs.map((summary, index) => {
-          const run = runDetails[summary.id] ?? null;
-          const isCurrent = activeRunId === summary.id && active;
-          const finalText = run?.finalText ?? summary.finalText;
-          const runError = run?.error ?? summary.error;
-          const options = runOptions(run ?? summary);
-          return (
-            <article className="chat-turn" key={summary.id}>
-              <div className="chat-user-message">
-                <span>你 · 第 {index + 1} 轮</span>
-                <p>{summary.task}</p>
-                {run && run.inputFiles.length > 0 ? <small>材料：{run.inputFiles.map((file) => file.name).join("、")}</small> : null}
-              </div>
-              {options ? (
-                <div className="chat-turn-options" aria-label="本轮设置">
-                  <span>Skills {options.skillIds.length}</span>
-                  <span>{permissionBadgeLabels[options.permissionMode]}</span>
-                  <span>{options.model}</span>
-                  <span>effort {options.effort}</span>
-                </div>
-              ) : null}
-              <div className="chat-assistant-message">
-                <div className="chat-turn-heading">
-                  <div><strong>Codex</strong><RunStatusBadge status={run?.status ?? summary.status} /></div>
-                  <Link className="text-link" to={`/runs/${encodeURIComponent(summary.id)}`}>运行详情</Link>
-                </div>
-                {isCurrent ? (
-                  <div className="chat-live-run">
-                    <Approvals runId={summary.id} approvals={approvals} onChange={setApprovals} onRunUpdated={async () => { await refreshRun(summary.id); }} />
-                    {activeRun ? (
-                      <div className="chat-live-actions">
-                        <span className={`chat-connection ${connection}`} role="status">{connection === "connected" ? "实时连接正常" : connection === "connecting" ? "正在连接实时过程" : "连接中断，浏览器正在按 Last-Event-ID 自动续传"}</span>
-                        <button type="button" className="button button-small button-danger" onClick={() => void stop()} disabled={stopping}>{stopping ? "正在停止…" : "停止"}</button>
-                      </div>
-                    ) : <LoadingState label="正在读取当前运行" />}
-                    <Timeline events={events} />
-                  </div>
-                ) : (
-                  <>
-                    {finalText ? <Markdown className="chat-final-text">{finalText}</Markdown> : null}
-                    {!finalText && !runError && summary.status === "completed" ? <p className="muted">本轮没有文字回复。</p> : null}
-                    {runError ? <Notice tone="warning"><strong>本轮运行错误</strong><p>{runError}</p></Notice> : null}
-                  </>
-                )}
-                {run && (run.files.length > 0 || isCurrent) ? <RunFiles runId={summary.id} files={run.files} /> : null}
-              </div>
-            </article>
-          );
-        })}
-      </div>
+      <MessageScrollerProvider key={visibleDetail?.conversation.id ?? "loading"} autoScroll scrollMargin={100}>
+        <MessageScroller className="agent-chat-scroller">
+          <MessageScrollerViewport>
+            <MessageScrollerContent className="gap-6 p-5" aria-busy={active || detailLoading}>
+              {detailLoading && !visibleDetail ? <MessageScrollerItem messageId="loading"><LoadingState label="正在进入员工会话" /></MessageScrollerItem> : null}
+              {detailError ? <MessageScrollerItem messageId="error"><ErrorBanner message={detailError} onRetry={() => void refreshConversation(true)} /></MessageScrollerItem> : null}
+              {visibleDetail?.runs.length === 0 ? <MessageScrollerItem messageId="welcome"><Empty><EmptyHeader><EmptyTitle>与 {agent.name} 开始协作</EmptyTitle><EmptyDescription>描述任务，或添加文档、数据和示例文件。</EmptyDescription></EmptyHeader></Empty></MessageScrollerItem> : null}
+              {visibleDetail?.runs.flatMap((summary) => {
+                const run = runDetails[summary.id] ?? null;
+                const isCurrent = activeRunId === summary.id && active;
+                const finalText = run?.finalText ?? summary.finalText;
+                const runError = run?.error ?? summary.error;
+                const options = runOptions(run ?? summary);
+                return [
+                  <MessageScrollerItem key={`${summary.id}-user`} messageId={`${summary.id}-user`} scrollAnchor>
+                    <Message align="end" className="user-chat-message"><MessageContent>
+                      <Bubble align="end" variant="default"><BubbleContent className="whitespace-pre-wrap break-words">{summary.task}</BubbleContent></Bubble>
+                      {run && run.inputFiles.length > 0 ? <MessageFooter>附件：{run.inputFiles.map((file) => file.name).join("、")}</MessageFooter> : null}
+                      <MessageFooter className="user-message-actions">
+                        <time dateTime={summary.createdAt}>{new Date(summary.createdAt).toLocaleString("zh-CN", { month: "long", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false })}</time>
+                        <Button type="button" variant="ghost" size="icon-sm" aria-label="复制消息" title="复制消息" onClick={() => void copyReply(summary.task)}><CopyIcon /></Button>
+                      </MessageFooter>
+                    </MessageContent></Message>
+                  </MessageScrollerItem>,
+                  <MessageScrollerItem key={`${summary.id}-agent`} messageId={`${summary.id}-agent`}>
+                    <Message><MessageContent className="w-full gap-3">
+                      <MessageHeader><strong>{agent.name}</strong><RunStatusBadge status={run?.status ?? summary.status} /></MessageHeader>
+                      {isCurrent ? <>
+                        <Approvals runId={summary.id} approvals={approvals} onChange={setApprovals} onRunUpdated={async () => { await refreshRun(summary.id); }} />
+                        <span className={`chat-connection ${connection}`} role="status">{connection === "connected" ? "实时连接正常" : connection === "connecting" ? "正在连接" : "连接中断，正在自动续传"}</span>
+                        <AgentActivity events={events} running />
+                      </> : <>
+                        <RunHistory runId={summary.id} />
+                        {finalText ? <Markdown>{finalText}</Markdown> : null}
+                        {!finalText && !runError && summary.status === "completed" ? <p className="muted">本轮没有文字回复。</p> : null}
+                        {runError ? <Notice tone="warning"><strong>本轮运行错误</strong><p>{runError}</p></Notice> : null}
+                        <MessageFooter>
+                          {finalText ? <Button variant="ghost" size="icon-sm" aria-label="复制回复" onClick={() => void copyReply(finalText)}><CopyIcon /></Button> : null}
+                          {(runError || summary.status === "interrupted") ? <Button variant="ghost" size="sm" disabled={composerDisabled} onClick={() => { setTask(summary.task); document.getElementById("chat-task")?.focus(); }}>重新编辑并发送</Button> : null}
+                          {options ? <span>{options.model} · {permissionBadgeLabels[options.permissionMode]}</span> : null}
+                        </MessageFooter>
+                      </>}
+                      {run && run.files.length > 0 ? <RunFiles runId={summary.id} files={run.files} /> : null}
+                    </MessageContent></Message>
+                  </MessageScrollerItem>,
+                ];
+              })}
+            </MessageScrollerContent>
+          </MessageScrollerViewport>
+          <ConversationIndex rounds={visibleDetail?.runs ?? []} />
+          <MessageScrollerButton aria-label="回到最新消息" />
+        </MessageScroller>
+      </MessageScrollerProvider>
 
       {visibleDetail ? (
         <form className="chat-composer" onSubmit={(event) => { event.preventDefault(); void send(); }}>
@@ -549,18 +551,14 @@ export function AgentChatPage({ agent, training, onAvatarClick, configOpen = fal
           {composerError ? <ErrorBanner message={composerError} /> : null}
           {codexError ? <ErrorBanner message={codexError} onRetry={() => void loadCodexConfig()} /> : null}
           {permissionMode === "full" ? <p className="composer-full-warning" role="alert">完全权限：不审批且可访问工作区外文件，请仅在可信隔离项目中使用。</p> : null}
-          {attachments.length > 0 ? (
-            <div className="composer-attachment-grid" aria-label="已选附件">
-              {attachments.map((attachment) => (
-                <div className={`composer-attachment${attachment.previewUrl ? " is-image" : ""}`} key={attachment.id}>
-                  {attachment.previewUrl ? <img src={attachment.previewUrl} alt={attachment.file.name} /> : <span className="composer-file-mark" aria-hidden="true">文</span>}
-                  <span className="composer-attachment-copy"><strong>{attachment.file.name}</strong><small>{formatBytes(attachment.file.size)}</small></span>
-                  <button type="button" aria-label={`移除 ${attachment.file.name}`} onClick={() => removeAttachment(attachment.id)} disabled={composerDisabled}>×</button>
-                </div>
-              ))}
-              <button type="button" className="text-button composer-clear-files" onClick={clearAttachments} disabled={composerDisabled}>清除全部</button>
-            </div>
-          ) : null}
+          <InputGroup className="agent-prompt-input">
+          {attachments.length > 0 ? <InputGroupAddon align="block-start"><AttachmentGroup>
+            {attachments.map((attachment) => <Attachment size="sm" key={attachment.id}>
+              <AttachmentMedia variant={attachment.previewUrl ? "image" : "icon"}>{attachment.previewUrl ? <img src={attachment.previewUrl} alt={attachment.file.name} /> : <FileIcon />}</AttachmentMedia>
+              <AttachmentContent><AttachmentTitle>{attachment.file.name}</AttachmentTitle><AttachmentDescription>{formatBytes(attachment.file.size)}</AttachmentDescription></AttachmentContent>
+              <AttachmentActions><AttachmentAction aria-label={`移除 ${attachment.file.name}`} onClick={() => removeAttachment(attachment.id)} disabled={composerDisabled}><XIcon /></AttachmentAction></AttachmentActions>
+            </Attachment>)}
+          </AttachmentGroup></InputGroupAddon> : null}
           <ChatComposerEditor
             ref={composerEditor}
             value={task}
@@ -571,7 +569,7 @@ export function AgentChatPage({ agent, training, onAvatarClick, configOpen = fal
             onSend={() => void send()}
             onPaste={pasteFiles}
           />
-          <div className="composer-settings-row">
+          <InputGroupAddon align="block-end" className="composer-settings-row">
             <div className="composer-attachments">
               <input
                 ref={fileInput}
@@ -585,24 +583,25 @@ export function AgentChatPage({ agent, training, onAvatarClick, configOpen = fal
                 }}
                 disabled={composerDisabled}
               />
-              <label htmlFor="chat-materials">附件 {attachments.length > 0 ? attachments.length : ""}</label>
+              <InputGroupButton type="button" size="icon-sm" aria-label="添加附件" onClick={() => fileInput.current?.click()} disabled={composerDisabled}><PaperclipIcon /></InputGroupButton>
             </div>
             <div className="composer-skills" ref={skillsMenu}>
-              <button type="button" className="composer-control" aria-expanded={skillsOpen} aria-haspopup="dialog" onMouseDown={(event) => event.preventDefault()} onClick={() => setSkillsOpen((current) => !current)} disabled={settingsDisabled}>
+              <InputGroupButton type="button" size="sm" aria-expanded={skillsOpen} aria-haspopup="dialog" onMouseDown={(event) => event.preventDefault()} onClick={() => setSkillsOpen((current) => !current)} disabled={settingsDisabled}>
                 @ Skills{selectedSkillIds.length > 0 ? ` ${selectedSkillIds.length}` : ""}
-              </button>
+              </InputGroupButton>
             </div>
-            <label className="composer-select"><span>权限</span><select value={permissionMode} onChange={(event) => setPermissionMode(event.target.value as PermissionMode)} disabled={settingsDisabled}>{Object.entries(permissionLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-            <label className="composer-select"><span>模型</span><select value={model} onChange={(event) => { setModel(event.target.value); setEffort(""); }} disabled={settingsDisabled || !codexConfig}>{codexConfig?.models.map((option) => <option key={option.id} value={option.model}>{option.displayName}</option>)}</select></label>
-            <label className="composer-select"><span>思考</span><select value={effort} onChange={(event) => setEffort(event.target.value)} disabled={settingsDisabled || !selectedModel}><option value="">跟随模型{selectedModel ? `（${selectedModel.defaultReasoningEffort}）` : ""}</option>{selectedModel?.supportedReasoningEfforts.map((value) => <option key={value} value={value}>{value}</option>)}</select></label>
-            <button type="submit" className="button button-primary composer-send" disabled={composerDisabled || !task.trim() || !selectedModel}>{sending ? "正在发送…" : "发送"}</button>
-          </div>
+            <ChoiceMenu label="运行权限" value={permissionMode} options={Object.entries(permissionLabels).map(([value, label]) => ({ value, label }))} disabled={settingsDisabled} onChange={(value) => setPermissionMode(value as PermissionMode)} />
+            <ChoiceMenu label="选择模型" value={model} options={codexConfig?.models.map((option) => ({ value: option.model, label: option.displayName })) ?? []} disabled={settingsDisabled || !codexConfig} onChange={(value) => { setModel(value); setEffort(""); }} />
+            <ChoiceMenu label="思考强度" value={effort} options={[{ value: "", label: "跟随模型" }, ...(selectedModel?.supportedReasoningEfforts.map((value) => ({ value, label: value })) ?? [])]} disabled={settingsDisabled || !selectedModel} onChange={setEffort} />
+            {active ? <InputGroupButton type="button" variant="default" size="icon-sm" className="ml-auto" aria-label="停止生成" onClick={() => void stop()} disabled={stopping}><SquareIcon /></InputGroupButton> : <InputGroupButton type="submit" variant="default" size="icon-sm" className="ml-auto" aria-label="发送消息" disabled={composerDisabled || !task.trim() || !selectedModel}><ArrowUpIcon /></InputGroupButton>}
+          </InputGroupAddon>
+          </InputGroup>
           {skillsOpen ? (
             <div ref={skillsPopover} className="composer-skills-popover composer-skills-toolbar-popover" role="dialog" aria-label="调用本轮 Skills">
               <div className="composer-skills-heading"><strong>调用 Skill</strong><span>插入到输入框</span></div>
               <div className="composer-skill-options">
                 {training.skills.map((skill) => (
-                  <button
+                  <Button variant="ghost"
                     type="button"
                     key={skill.skillId}
                     onMouseDown={(event) => event.preventDefault()}
@@ -612,12 +611,12 @@ export function AgentChatPage({ agent, training, onAvatarClick, configOpen = fal
                     }}
                   >
                     <span><strong>@{skill.skillId}</strong><small>{skill.path}</small></span>
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>
           ) : null}
-          <p className="composer-limits">输入 @ 或点击 Skills 调用能力；最多 10 个附件，每个不超过 10 MB；设置仅用于本轮</p>
+          <p className="composer-limits">Enter 发送 · Shift+Enter 换行 · @ 调用 Skills · 最多 10 个附件，每个 10 MB</p>
         </form>
       ) : null}
     </section>

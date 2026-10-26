@@ -1,3 +1,9 @@
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { FieldGroup, Field, FieldLabel } from "@/components/ui/field";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useCallback, useEffect, useState } from "react";
 import type {
   CodexApprovalPolicy,
@@ -174,9 +180,9 @@ export function CodexPage() {
         title="Codex 管理"
         description="查看本机 Codex 状态，并配置新会话使用的模型、推理和默认权限。"
         actions={(
-          <button type="button" className="button button-secondary" onClick={reload} disabled={busy}>
+          <Button variant="outline" type="button" onClick={reload} disabled={busy}>
             {loading ? "正在读取…" : "重新检测"}
-          </button>
+          </Button>
         )}
       />
 
@@ -188,11 +194,12 @@ export function CodexPage() {
       {error ? <ErrorBanner message={error} onRetry={reload} /> : null}
       {message ? <Notice tone="success">{message}</Notice> : null}
 
-      <section className="panel" aria-labelledby="codex-status-title">
-        <div className="section-heading">
+      <Card className="content-panel" aria-labelledby="codex-status-title">
+        <CardHeader>
           <div><span className="eyebrow">Local Codex</span><h2 id="codex-status-title">运行诊断</h2></div>
-          <span className={`badge ${ready ? "status-completed" : "status-failed"}`}>{ready ? "已就绪" : "需要检查"}</span>
-        </div>
+          <Badge variant="secondary">{ready ? "已就绪" : "需要检查"}</Badge>
+        </CardHeader>
+        <CardContent>
         <dl className="definition-grid">
           <Definition label="Codex 版本"><code>{codex?.version ?? "未知"}</code></Definition>
           <Definition label="登录状态"><span>{codex?.loggedIn ? `已登录（${codex.accountType ?? "账号"}）` : "未登录"}</span></Definition>
@@ -202,7 +209,8 @@ export function CodexPage() {
         </dl>
         {codex?.error ? <p className="field-help">{codex.error}</p> : null}
         <p className="field-help">CLI 命令由 Bridge 启动环境决定。需要更换时，请设置 SKILLHUB_CODEX_PATH 并重启 Bridge。</p>
-      </section>
+        </CardContent>
+      </Card>
 
       {data && data.warnings.length > 0 ? (
         <Notice>
@@ -218,99 +226,104 @@ export function CodexPage() {
         <EmptyState
           title="Codex 配置暂不可用"
           description="请先检查上方 CLI 版本和运行状态，再重新检测。"
-          action={<button type="button" className="button button-secondary" onClick={reload} disabled={busy}>重新检测</button>}
+          action={<Button variant="outline" type="button" onClick={reload} disabled={busy}>重新检测</Button>}
         />
       ) : null}
 
       {data && current && draft ? (
         <form onSubmit={(event) => { event.preventDefault(); void save(); }}>
-          <section className="panel" aria-labelledby="codex-model-title">
-            <div className="section-heading">
+          <FieldGroup>
+          <Card className="content-panel" aria-labelledby="codex-model-title">
+            <CardHeader>
               <div><span className="eyebrow">新会话默认值</span><h2 id="codex-model-title">模型与推理</h2></div>
-            </div>
-            <div className="form-two-columns">
-              <div className="field">
-                <label htmlFor="codex-model">默认模型</label>
-                <select id="codex-model" value={draft.model} onChange={(event) => updateModel(event.target.value)} disabled={busy || data.models.length === 0}>
-                  {!draft.model ? <option value="" disabled>Codex 默认</option> : null}
-                  {draft.model && !selectedModel ? <option value={draft.model} disabled>{draft.model}（当前自定义）</option> : null}
-                  {data.models.map((model) => <option value={model.model} key={model.id}>{model.displayName} · {model.model}</option>)}
-                </select>
+            </CardHeader>
+            <CardContent>
+            <FieldGroup className="form-two-columns">
+              <Field className="field">
+                <FieldLabel htmlFor="codex-model">默认模型</FieldLabel>
+                <NativeSelect className="w-full" id="codex-model" value={draft.model} onChange={(event) => updateModel(event.target.value)} disabled={busy || data.models.length === 0}>
+                  {!draft.model ? <NativeSelectOption value="" disabled>Codex 默认</NativeSelectOption> : null}
+                  {draft.model && !selectedModel ? <NativeSelectOption value={draft.model} disabled>{draft.model}（当前自定义）</NativeSelectOption> : null}
+                  {data.models.map((model) => <NativeSelectOption value={model.model} key={model.id}>{model.displayName} · {model.model}</NativeSelectOption>)}
+                </NativeSelect>
                 <p className="field-help">选项直接来自本机 Codex，不修改模型服务商。</p>
-              </div>
-              <div className="field">
-                <label htmlFor="codex-reasoning">推理级别</label>
-                <select id="codex-reasoning" value={draft.reasoningEffort} onChange={(event) => updateSetting("reasoningEffort", event.target.value)} disabled={busy || !selectedModel}>
-                  {!draft.reasoningEffort ? <option value="" disabled>模型默认</option> : null}
-                  {efforts.map((effort) => <option value={effort} key={effort}>{reasoningLabels[effort] ?? effort} · {effort}</option>)}
-                </select>
+              </Field>
+              <Field className="field">
+                <FieldLabel htmlFor="codex-reasoning">推理级别</FieldLabel>
+                <NativeSelect className="w-full" id="codex-reasoning" value={draft.reasoningEffort} onChange={(event) => updateSetting("reasoningEffort", event.target.value)} disabled={busy || !selectedModel}>
+                  {!draft.reasoningEffort ? <NativeSelectOption value="" disabled>模型默认</NativeSelectOption> : null}
+                  {efforts.map((effort) => <NativeSelectOption value={effort} key={effort}>{reasoningLabels[effort] ?? effort} · {effort}</NativeSelectOption>)}
+                </NativeSelect>
                 <p className="field-help">切换模型时会采用新模型的默认推理级别。</p>
-              </div>
-            </div>
+              </Field>
+            </FieldGroup>
             {selectedModel?.description ? <p className="model-description">{selectedModel.description}</p> : null}
-          </section>
+            </CardContent>
+          </Card>
 
-          <section className="panel" aria-labelledby="codex-permissions-title">
-            <div className="section-heading">
+          <Card className="content-panel" aria-labelledby="codex-permissions-title">
+            <CardHeader>
               <div><span className="eyebrow">Codex 全局默认</span><h2 id="codex-permissions-title">权限与网络</h2></div>
-            </div>
-            <div className="form-two-columns">
-              <div className="field">
-                <label htmlFor="codex-approval">审批策略</label>
-                <select id="codex-approval" value={draft.approvalPolicy} onChange={(event) => updateSetting("approvalPolicy", event.target.value as CodexSettings["approvalPolicy"])} disabled={busy || draft.approvalPolicy === "custom"}>
-                  {draft.approvalPolicy === "default" ? <option value="default" disabled>跟随 Codex 默认</option> : null}
-                  {draft.approvalPolicy === "custom" ? <option value="custom" disabled>细粒度配置（保留）</option> : null}
+            </CardHeader>
+            <CardContent>
+            <FieldGroup className="form-two-columns">
+              <Field className="field">
+                <FieldLabel htmlFor="codex-approval">审批策略</FieldLabel>
+                <NativeSelect className="w-full" id="codex-approval" value={draft.approvalPolicy} onChange={(event) => updateSetting("approvalPolicy", event.target.value as CodexSettings["approvalPolicy"])} disabled={busy || draft.approvalPolicy === "custom"}>
+                  {draft.approvalPolicy === "default" ? <NativeSelectOption value="default" disabled>跟随 Codex 默认</NativeSelectOption> : null}
+                  {draft.approvalPolicy === "custom" ? <NativeSelectOption value="custom" disabled>细粒度配置（保留）</NativeSelectOption> : null}
                   {(Object.keys(approvalLabels) as CodexApprovalPolicy[]).map((policy) => (
-                    <option value={policy} key={policy} disabled={data.allowedApprovalPolicies !== null && !data.allowedApprovalPolicies.includes(policy)}>{approvalLabels[policy]} · {policy}</option>
+                    <NativeSelectOption value={policy} key={policy} disabled={data.allowedApprovalPolicies !== null && !data.allowedApprovalPolicies.includes(policy)}>{approvalLabels[policy]} · {policy}</NativeSelectOption>
                   ))}
-                </select>
+                </NativeSelect>
                 <p className="field-help">不会降低 Agent School 测试现有的人工审批要求。</p>
-              </div>
-              <div className="field">
-                <label htmlFor="codex-sandbox">沙箱模式</label>
-                <select id="codex-sandbox" value={draft.sandboxMode} onChange={(event) => { updateSetting("sandboxMode", event.target.value as CodexSettings["sandboxMode"]); setDangerConfirmed(false); }} disabled={busy || draft.sandboxMode === "custom"}>
-                  {draft.sandboxMode === "default" ? <option value="default" disabled>跟随 Codex 默认</option> : null}
-                  {draft.sandboxMode === "custom" ? <option value="custom" disabled>自定义配置（保留）</option> : null}
+              </Field>
+              <Field className="field">
+                <FieldLabel htmlFor="codex-sandbox">沙箱模式</FieldLabel>
+                <NativeSelect className="w-full" id="codex-sandbox" value={draft.sandboxMode} onChange={(event) => { updateSetting("sandboxMode", event.target.value as CodexSettings["sandboxMode"]); setDangerConfirmed(false); }} disabled={busy || draft.sandboxMode === "custom"}>
+                  {draft.sandboxMode === "default" ? <NativeSelectOption value="default" disabled>跟随 Codex 默认</NativeSelectOption> : null}
+                  {draft.sandboxMode === "custom" ? <NativeSelectOption value="custom" disabled>自定义配置（保留）</NativeSelectOption> : null}
                   {(Object.keys(sandboxLabels) as CodexSandboxMode[]).map((mode) => (
-                    <option value={mode} key={mode} disabled={data.allowedSandboxModes !== null && !data.allowedSandboxModes.includes(mode)}>{sandboxLabels[mode]} · {mode}</option>
+                    <NativeSelectOption value={mode} key={mode} disabled={data.allowedSandboxModes !== null && !data.allowedSandboxModes.includes(mode)}>{sandboxLabels[mode]} · {mode}</NativeSelectOption>
                   ))}
-                </select>
+                </NativeSelect>
                 <p className="field-help">Agent School 测试仍固定为 workspace-write。</p>
-              </div>
-            </div>
-            <div className="field checkbox-field">
-              <label htmlFor="codex-network">
-                <input
+              </Field>
+            </FieldGroup>
+            <Field className="field checkbox-field">
+              <FieldLabel htmlFor="codex-network">
+                <Checkbox
                   id="codex-network"
-                  type="checkbox"
+
                   checked={draft.networkAccess}
-                  onChange={(event) => updateSetting("networkAccess", event.target.checked)}
+                  onCheckedChange={(checked) => updateSetting("networkAccess", checked)}
                   disabled={busy}
                 />
                 <span>允许工作区命令联网</span>
-              </label>
+              </FieldLabel>
               <p className="field-help">对应 sandbox_workspace_write.network_access，仅影响 Codex 的 workspace-write 默认配置。</p>
-            </div>
-            <div className="field">
-              <label htmlFor="codex-web-search">网页搜索</label>
-              <select id="codex-web-search" value={draft.webSearch} onChange={(event) => updateSetting("webSearch", event.target.value as CodexSettings["webSearch"])} disabled={busy || draft.webSearch === "custom"}>
-                {draft.webSearch === "custom" ? <option value="custom" disabled>自定义搜索配置（保留）</option> : null}
+            </Field>
+            <Field className="field">
+              <FieldLabel htmlFor="codex-web-search">网页搜索</FieldLabel>
+              <NativeSelect className="w-full" id="codex-web-search" value={draft.webSearch} onChange={(event) => updateSetting("webSearch", event.target.value as CodexSettings["webSearch"])} disabled={busy || draft.webSearch === "custom"}>
+                {draft.webSearch === "custom" ? <NativeSelectOption value="custom" disabled>自定义搜索配置（保留）</NativeSelectOption> : null}
                 {(Object.keys(webSearchLabels) as CodexWebSearchMode[]).map((mode) => (
-                  <option value={mode} key={mode} disabled={data.allowedWebSearchModes !== null && !data.allowedWebSearchModes.includes(mode)}>{webSearchLabels[mode]} · {mode}</option>
+                  <NativeSelectOption value={mode} key={mode} disabled={data.allowedWebSearchModes !== null && !data.allowedWebSearchModes.includes(mode)}>{webSearchLabels[mode]} · {mode}</NativeSelectOption>
                 ))}
-              </select>
-            </div>
-          </section>
+              </NativeSelect>
+            </Field>
+            </CardContent>
+          </Card>
 
           {draft.sandboxMode === "danger-full-access" ? (
             <Notice tone="warning">
               <strong>完全访问会移除命令的沙箱限制</strong>
               <p>Codex 执行的错误或恶意命令可能影响本机文件和系统。请只在理解风险后启用。</p>
               {dangerConfirmationRequired ? (
-                <label className="danger-confirmation" htmlFor="codex-danger-confirm">
-                  <input id="codex-danger-confirm" type="checkbox" checked={dangerConfirmed} onChange={(event) => setDangerConfirmed(event.target.checked)} disabled={busy} />
+                <FieldLabel className="danger-confirmation" htmlFor="codex-danger-confirm">
+                  <Checkbox id="codex-danger-confirm"  checked={dangerConfirmed} onCheckedChange={(checked) => setDangerConfirmed(checked)} disabled={busy} />
                   <span>我确认允许 Codex 使用 danger-full-access</span>
-                </label>
+                </FieldLabel>
               ) : null}
             </Notice>
           ) : null}
@@ -318,13 +331,14 @@ export function CodexPage() {
           <div className="form-footer settings-footer">
             <p>仅保存本次修改的字段。检测到版本冲突时，不会自动覆盖其他程序的修改。</p>
             <div className="button-row">
-              <button type="button" className="button button-secondary" onClick={reset} disabled={!dirty || busy}>放弃修改</button>
-              <button type="submit" className="button button-primary" disabled={!dirty || busy || (dangerConfirmationRequired && !dangerConfirmed)}>
+              <Button variant="outline" type="button" onClick={reset} disabled={!dirty || busy}>放弃修改</Button>
+              <Button variant="default" type="submit" disabled={!dirty || busy || (dangerConfirmationRequired && !dangerConfirmed)}>
                 {saving ? "正在保存…" : "保存配置"}
-              </button>
+              </Button>
             </div>
           </div>
-        </form>
+        </FieldGroup>
+</form>
       ) : null}
     </div>
   );

@@ -26,11 +26,11 @@
 * { box-sizing: border-box; }
 html { min-width: 320px; scroll-behavior: smooth; }
 body { margin: 0; min-width: 320px; min-height: 100vh; line-height: 1.5; background: var(--bg); }
-button, input, textarea, select { font: inherit; }
+button:not([data-slot]), input:not([data-slot]), textarea:not([data-slot]), select:not([data-slot]) { font: inherit; }
 button, a, input, textarea, select, summary { -webkit-tap-highlight-color: transparent; }
-button { color: inherit; }
-a { color: var(--text); text-decoration: none; }
-a:hover { color: var(--primary-hover); }
+button:not([data-slot]) { color: inherit; }
+a:not([data-slot]) { color: var(--text); text-decoration: none; }
+a:not([data-slot]):hover { color: var(--primary-hover); }
 h1, h2, h3, p { margin-top: 0; }
 h1, h2, h3 { color: var(--text); line-height: 1.3; letter-spacing: -0.02em; }
 h2 { font-size: 18px; font-weight: 600; }
@@ -187,7 +187,7 @@ pre { margin: 0; }
 .break-all { word-break: break-all; }
 .pre-wrap { margin-bottom: 0; line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; }
 
-input, textarea, select {
+input:not([data-slot]), textarea:not([data-slot]), select:not([data-slot]) {
   width: 100%;
   color: var(--text);
   background: var(--surface);
@@ -196,15 +196,15 @@ input, textarea, select {
   outline: none;
   transition: border-color 150ms ease, box-shadow 150ms ease, background 150ms ease;
 }
-input, select { min-height: 40px; padding: 9px 12px; }
-textarea { min-height: 90px; padding: 12px; line-height: 1.65; resize: vertical; }
-input::placeholder, textarea::placeholder { color: #999; }
-input:focus, textarea:focus, select:focus { background: #fff; border-color: var(--accent); box-shadow: 0 0 0 3px rgb(0 112 243 / 14%); }
-input:disabled, textarea:disabled, select:disabled { color: #888; cursor: not-allowed; background: var(--surface-muted); }
-input[type="file"] { padding: 7px; }
-input[type="file"]::file-selector-button { padding: 6px 11px; margin-right: 12px; color: #fff; font-size: 12px; cursor: pointer; background: #000; border: 0; border-radius: 4px; }
-input[type="checkbox"] { flex: 0 0 auto; width: 16px; height: 16px; min-height: 0; padding: 0; margin: 0; accent-color: #000; }
-label { display: inline-block; margin-bottom: 7px; color: var(--text); font-size: 12px; font-weight: 500; }
+input:not([data-slot]), select:not([data-slot]) { min-height: 40px; padding: 9px 12px; }
+textarea:not([data-slot]) { min-height: 90px; padding: 12px; line-height: 1.65; resize: vertical; }
+input:not([data-slot])::placeholder, textarea:not([data-slot])::placeholder { color: #999; }
+input:not([data-slot]):focus, textarea:not([data-slot]):focus, select:not([data-slot]):focus { background: #fff; border-color: var(--accent); box-shadow: 0 0 0 3px rgb(0 112 243 / 14%); }
+input:not([data-slot]):disabled, textarea:not([data-slot]):disabled, select:not([data-slot]):disabled { color: #888; cursor: not-allowed; background: var(--surface-muted); }
+input:not([data-slot])[type="file"] { padding: 7px; }
+input:not([data-slot])[type="file"]::file-selector-button { padding: 6px 11px; margin-right: 12px; color: #fff; font-size: 12px; cursor: pointer; background: #000; border: 0; border-radius: 4px; }
+input:not([data-slot])[type="checkbox"] { flex: 0 0 auto; width: 16px; height: 16px; min-height: 0; padding: 0; margin: 0; accent-color: #000; }
+label:not([data-slot]) { display: inline-block; margin-bottom: 7px; color: var(--text); font-size: 12px; font-weight: 500; }
 .field { margin-bottom: 20px; }
 .field-help { margin: 7px 0 0; color: var(--muted); font-size: 11px; line-height: 1.6; }
 .checkbox-field label, .danger-confirmation { display: flex; gap: 9px; align-items: center; margin-bottom: 0; font-size: 13px; }
@@ -309,9 +309,9 @@ label { display: inline-block; margin-bottom: 7px; color: var(--text); font-size
 .markdown ul, .markdown ol { padding-left: 24px; }
 .markdown a { color: var(--accent); }
 .markdown blockquote { padding: 4px 16px; margin: 18px 0; color: var(--muted); background: var(--surface-muted); border-left: 2px solid #bbb; }
-.markdown code { padding: 2px 5px; color: #222; background: #f3f3f3; border-radius: 4px; }
-.markdown pre { max-height: 560px; padding: 16px; margin: 16px 0; overflow: auto; color: #ededed; background: #0a0a0a; border-radius: 6px; }
-.markdown pre code { padding: 0; color: inherit; background: transparent; }
+.markdown code:not([data-slot]) { padding: 2px 5px; color: #222; background: #f3f3f3; border-radius: 4px; }
+.markdown pre:not([data-slot]) { max-height: 560px; padding: 16px; margin: 16px 0; overflow: auto; color: #ededed; background: #0a0a0a; border-radius: 6px; }
+.markdown pre:not([data-slot]) code { padding: 0; color: inherit; background: transparent; }
 .markdown table { display: block; max-width: 100%; margin: 16px 0; overflow-x: auto; border-collapse: collapse; }
 .markdown th, .markdown td { padding: 8px 12px; text-align: left; border: 1px solid var(--line); }
 .markdown th { background: var(--surface-muted); }

@@ -1,3 +1,8 @@
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { FieldLabel } from "@/components/ui/field";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Installation, SkillDetail, SkillVersion } from "@skillhub/shared";
 import { api } from "../api";
@@ -87,7 +92,7 @@ export function SkillDetailPage({ id }: { id: string }) {
         title={skill.displayName}
         description={skill.description}
         actions={installation ? (
-          <Link className="button button-primary" to={`/runs/new/${encodeURIComponent(skill.id)}`}>执行测试</Link>
+          <Button variant="default" nativeButton={false} render={<Link to={`/runs/new/${encodeURIComponent(skill.id)}`} />}>执行测试</Button>
         ) : null}
       />
 
@@ -98,40 +103,45 @@ export function SkillDetailPage({ id }: { id: string }) {
 
       <div className="detail-layout">
         <main className="detail-main">
-          <section className="panel markdown-panel" aria-labelledby="skill-document-title">
-            <div className="section-heading">
+          <Card className="content-panel markdown-panel" aria-labelledby="skill-document-title">
+            <CardHeader>
               <div><span className="eyebrow">完整课程文档</span><h2 id="skill-document-title">SKILL.md</h2></div>
-            </div>
+            </CardHeader>
+            <CardContent>
             <Markdown>{skill.skillMarkdown}</Markdown>
-          </section>
+            </CardContent>
+          </Card>
 
-          <section className="panel" aria-labelledby="skill-files-title">
-            <div className="section-heading"><h2 id="skill-files-title">课程文件</h2><span className="muted">{skill.files.length} 个文件</span></div>
+          <Card className="content-panel" aria-labelledby="skill-files-title">
+            <CardHeader><h2 id="skill-files-title">课程文件</h2><span className="muted">{skill.files.length} 个文件</span></CardHeader>
+            <CardContent>
             <ul className="file-list plain-list">
               {skill.files.map((file) => (
                 <li key={file.path}><code>{file.path}</code><span>{formatBytes(file.size)}</span></li>
               ))}
             </ul>
-          </section>
+            </CardContent>
+          </Card>
         </main>
 
         <aside className="detail-sidebar">
-          <section className="panel install-panel" aria-labelledby="install-title">
-            <h2 id="install-title">安装到本机</h2>
+          <Card className="content-panel install-panel" aria-labelledby="install-title">
+            <CardHeader><h2 id="install-title">安装到本机</h2></CardHeader>
+            <CardContent>
             {installation ? (
               <div className="current-installation">
-                <span className="badge status-completed">已安装</span>
+                <Badge variant="secondary">已安装</Badge>
                 <span>当前 <code>{shortCommit(installation.commit)}</code></span>
               </div>
             ) : <p className="muted">选择一个历史版本，安装后可从本页执行测试。</p>}
-            <label htmlFor="skill-version">课程版本</label>
-            <select id="skill-version" value={selectedCommit} onChange={(event) => setSelectedCommit(event.target.value)} disabled={installing}>
+            <FieldLabel htmlFor="skill-version">课程版本</FieldLabel>
+            <NativeSelect className="w-full" id="skill-version" value={selectedCommit} onChange={(event) => setSelectedCommit(event.target.value)} disabled={installing}>
               {versions.map((version) => (
-                <option value={version.commit} key={version.commit}>
+                <NativeSelectOption value={version.commit} key={version.commit}>
                   {shortCommit(version.commit)} · {version.subject}
-                </option>
+                </NativeSelectOption>
               ))}
-            </select>
+            </NativeSelect>
             {selectedVersion ? (
               <div className="selected-version">
                 <strong>{selectedVersion.subject}</strong>
@@ -139,35 +149,40 @@ export function SkillDetailPage({ id }: { id: string }) {
                 <code>{selectedVersion.commit}</code>
               </div>
             ) : null}
-            <button type="button" className="button button-primary button-block" onClick={() => void install()} disabled={installing || !selectedCommit}>
+            <Button variant="default" type="button" className="w-full" onClick={() => void install()} disabled={installing || !selectedCommit}>
               {installing ? "正在安装…" : installation ? "安装所选版本" : "安装此课程"}
-            </button>
+            </Button>
             <p className="field-help">安装以所选完整 commit 为准；重复安装会校验当前目录，发现本地修改时会阻止操作。</p>
-          </section>
+            </CardContent>
+          </Card>
 
-          <section className="panel" aria-labelledby="maintainers-title">
-            <h2 id="maintainers-title">维护信息</h2>
+          <Card className="content-panel" aria-labelledby="maintainers-title">
+            <CardHeader><h2 id="maintainers-title">维护信息</h2></CardHeader>
+            <CardContent>
             <dl className="compact-definitions">
               <div><dt>维护人</dt><dd>{skill.maintainers.length > 0 ? skill.maintainers.join("、") : "未标注"}</dd></div>
               <div><dt>标签</dt><dd>{skill.tags.length > 0 ? skill.tags.join("、") : "无标签"}</dd></div>
               <div><dt>最新提交</dt><dd><code>{shortCommit(skill.latestVersion.commit)}</code></dd></div>
             </dl>
-          </section>
+            </CardContent>
+          </Card>
 
-          <section className="panel" aria-labelledby="history-title">
-            <div className="section-heading"><h2 id="history-title">历史版本</h2><span className="muted">{versions.length} 个</span></div>
+          <Card className="content-panel" aria-labelledby="history-title">
+            <CardHeader><h2 id="history-title">历史版本</h2><span className="muted">{versions.length} 个</span></CardHeader>
+            <CardContent>
             <ol className="version-list">
               {versions.map((version) => (
                 <li className={version.commit === selectedCommit ? "is-selected" : ""} key={version.commit}>
-                  <button type="button" onClick={() => setSelectedCommit(version.commit)}>
-                    <span><code>{version.shortCommit}</code>{version.commit === skill.latestVersion.commit ? <span className="tag">最新</span> : null}</span>
+                  <Button variant="ghost" type="button" onClick={() => setSelectedCommit(version.commit)}>
+                    <span><code>{version.shortCommit}</code>{version.commit === skill.latestVersion.commit ? <Badge variant="secondary">最新</Badge> : null}</span>
                     <strong>{version.subject}</strong>
                     <small>{formatDate(version.committedAt)}</small>
-                  </button>
+                  </Button>
                 </li>
               ))}
             </ol>
-          </section>
+            </CardContent>
+          </Card>
         </aside>
       </div>
     </div>

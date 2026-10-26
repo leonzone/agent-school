@@ -1,3 +1,7 @@
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Agent, SkillSummary, TrainedAgent } from "@skillhub/shared";
 import { api } from "../api";
@@ -136,18 +140,18 @@ export function AgentDetailPage({ id }: { id: string }) {
         description={agent.description}
         actions={(
           <div className="agent-header-actions">
-            <Link className="button button-secondary" to={`/agents/${encodeURIComponent(agent.id)}/edit`}>编辑</Link>
-            <button type="button" className="button button-secondary" onClick={() => void copyAgent()} disabled={operation !== null}>
+            <Button variant="outline" nativeButton={false} render={<Link to={`/agents/${encodeURIComponent(agent.id)}/edit`} />}>编辑</Button>
+            <Button variant="outline" type="button" onClick={() => void copyAgent()} disabled={operation !== null}>
               {operation === "copy" ? "正在复制…" : "复制"}
-            </button>
+            </Button>
             {(!training || hasUpdate) ? (
-              <button type="button" className="button button-primary" onClick={() => void train()} disabled={operation !== null || training?.locallyModified}>
+              <Button variant="default" type="button" onClick={() => void train()} disabled={operation !== null || training?.locallyModified}>
                 {operation === "train" ? "正在培训…" : hasUpdate ? "更新培训" : "开始培训"}
-              </button>
+              </Button>
             ) : null}
             {training ? (
-              <Link className="button button-secondary" to={`/agents/${encodeURIComponent(agent.id)}/test`}>测试调试</Link>
-            ) : <button type="button" className="button button-secondary" disabled>测试调试</button>}
+              <Button variant="outline" nativeButton={false} render={<Link to={`/agents/${encodeURIComponent(agent.id)}/test`} />}>测试调试</Button>
+            ) : <Button variant="outline" type="button" disabled>测试调试</Button>}
           </div>
         )}
       />
@@ -163,18 +167,21 @@ export function AgentDetailPage({ id }: { id: string }) {
 
       <div className="agent-detail-layout">
         <main className="agent-detail-main">
-          <section className="panel agent-document" aria-labelledby="agent-document-title">
-            <div className="section-heading">
+          <Card className="content-panel agent-document" aria-labelledby="agent-document-title">
+            <CardHeader>
               <div><span className="eyebrow">角色工作指令</span><h2 id="agent-document-title">AGENTS.md</h2></div>
               <span className="muted">revision {agent.revision}</span>
-            </div>
+            </CardHeader>
+            <CardContent>
             <Markdown>{agent.instructions}</Markdown>
-          </section>
+            </CardContent>
+          </Card>
         </main>
 
         <aside className="agent-detail-sidebar">
-          <section className="panel agent-skills" aria-labelledby="agent-skills-title">
-            <div className="section-heading"><h2 id="agent-skills-title">所选 Skills</h2><span className="muted">{agent.skillIds.length} 个</span></div>
+          <Card className="content-panel agent-skills" aria-labelledby="agent-skills-title">
+            <CardHeader><h2 id="agent-skills-title">所选 Skills</h2><span className="muted">{agent.skillIds.length} 个</span></CardHeader>
+            <CardContent>
             <ul className="agent-skill-list">
               {agent.skillIds.map((skillId) => {
                 const skill = skillById.get(skillId);
@@ -187,10 +194,12 @@ export function AgentDetailPage({ id }: { id: string }) {
                 );
               })}
             </ul>
-          </section>
+            </CardContent>
+          </Card>
 
-          <section className="panel agent-training" aria-labelledby="agent-training-title">
-            <div className="section-heading"><h2 id="agent-training-title">本机培训</h2>{training ? <span className="agent-status agent-status-trained">已培训</span> : null}</div>
+          <Card className="content-panel agent-training" aria-labelledby="agent-training-title">
+            <CardHeader><h2 id="agent-training-title">本机培训</h2>{training ? <Badge>已培训</Badge> : null}</CardHeader>
+            <CardContent>
             {training ? (
               <div className="agent-training-details">
                 <dl>
@@ -210,21 +219,24 @@ export function AgentDetailPage({ id }: { id: string }) {
                 </ul>
               </div>
             ) : <p className="muted">尚未生成本机培训项目。完成培训后，这里会显示固定路径与 Skill commits。</p>}
-          </section>
+            </CardContent>
+          </Card>
 
-          <section className="panel agent-management" aria-labelledby="agent-management-title">
-            <h2 id="agent-management-title">角色管理</h2>
+          <Card className="content-panel agent-management" aria-labelledby="agent-management-title">
+            <CardHeader><h2 id="agent-management-title">角色管理</h2></CardHeader>
+            <CardContent>
             {training ? <p className="muted">已培训角色保留在本机，不能删除角色配置。</p> : confirmDelete ? (
-              <div className="agent-delete-confirm" role="alert">
-                <strong>确认删除“{agent.name}”？</strong>
-                <p>删除后无法撤销，请确认不再需要此角色。</p>
+              <Alert variant="destructive">
+                <AlertTitle>确认删除“{agent.name}”？</AlertTitle>
+                <AlertDescription>删除后无法撤销，请确认不再需要此角色。</AlertDescription>
                 <div className="button-row">
-                  <button type="button" className="button button-danger button-small" onClick={() => void remove()} disabled={operation !== null}>{operation === "delete" ? "正在删除…" : "确认删除"}</button>
-                  <button type="button" className="button button-secondary button-small" onClick={() => setConfirmDelete(false)} disabled={operation !== null}>取消</button>
+                  <Button variant="destructive" size="sm" type="button" onClick={() => void remove()} disabled={operation !== null}>{operation === "delete" ? "正在删除…" : "确认删除"}</Button>
+                  <Button variant="outline" size="sm" type="button" onClick={() => setConfirmDelete(false)} disabled={operation !== null}>取消</Button>
                 </div>
-              </div>
-            ) : <button type="button" className="text-button button-danger-text" onClick={() => setConfirmDelete(true)} disabled={operation !== null}>删除角色</button>}
-          </section>
+              </Alert>
+            ) : <Button variant="destructive" type="button" onClick={() => setConfirmDelete(true)} disabled={operation !== null}>删除角色</Button>}
+            </CardContent>
+          </Card>
         </aside>
       </div>
     </div>

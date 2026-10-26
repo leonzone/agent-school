@@ -1,8 +1,13 @@
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
+import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import type { ApprovalDecision, ApprovalRequest } from "@skillhub/shared";
 import { api } from "../api";
 import { errorMessage, formatDate, formatJson } from "../utils";
 import { ErrorBanner } from "./UI";
+
+import { Button } from "./ui/button";
+import { Item, ItemContent, ItemActions } from "./ui/item";
 
 const decisionLabels: Record<ApprovalDecision, string> = {
   accept: "批准",
@@ -32,7 +37,7 @@ function FriendlyValue({ name, value }: { name: string; value: unknown }) {
   if (name === "command") return <pre className="command-block">{typeof value === "string" ? value : formatJson(value)}</pre>;
   if (name === "cwd" || name === "grantRoot") return <code className="break-all">{typeof value === "string" ? value : formatJson(value)}</code>;
   if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") return <span>{String(value)}</span>;
-  return <details className="collapsible-output" open><summary>查看{name === "permissions" ? "权限" : "网络"}详情</summary><pre>{formatJson(value)}</pre></details>;
+  return <Collapsible className="collapsible-output" defaultOpen><CollapsibleTrigger render={<Button variant="ghost" className="w-full justify-start" />}>查看{name === "permissions" ? "权限" : "网络"}详情</CollapsibleTrigger><CollapsibleContent><pre>{formatJson(value)}</pre></CollapsibleContent></Collapsible>;
 }
 
 export function Approvals({ runId, approvals, onChange, onRunUpdated }: {
@@ -67,7 +72,7 @@ export function Approvals({ runId, approvals, onChange, onRunUpdated }: {
     <section className="approval-area" aria-labelledby="approvals-title">
       <div className="section-heading">
         <div><span className="eyebrow">必须人工决定</span><h2 id="approvals-title">待处理审批</h2></div>
-        <span className="badge status-waitingApproval">{approvals.length} 项待处理</span>
+        <Badge variant="secondary">{approvals.length} 项待处理</Badge>
       </div>
       <p>请核对命令、目录和权限影响。系统不会自动批准任何请求。</p>
       {error ? <ErrorBanner message={error} /> : null}
@@ -82,7 +87,7 @@ export function Approvals({ runId, approvals, onChange, onRunUpdated }: {
           return value !== undefined && value !== null && value !== "";
         });
         return (
-          <article className="approval-card" key={key}>
+          <Item variant="outline" key={key}><ItemContent>
             <div className="approval-card-heading">
               <div><span className="eyebrow">{approval.method}</span><h3>{approvalTitle(approval.method)}</h3></div>
               <time dateTime={approval.createdAt}>{formatDate(approval.createdAt)}</time>
@@ -94,25 +99,25 @@ export function Approvals({ runId, approvals, onChange, onRunUpdated }: {
                 ))}
               </dl>
             ) : <p>此请求没有可提取的友好字段，请查看完整参数后再决定。</p>}
-            <details className="approval-json">
-              <summary>查看完整请求参数</summary>
+            <Collapsible className="approval-json">
+              <CollapsibleTrigger render={<Button variant="ghost" className="w-full justify-start" />}>查看完整请求参数</CollapsibleTrigger><CollapsibleContent>
               <pre>{formatJson(approval.params)}</pre>
-            </details>
-            <div className="approval-actions">
+            </CollapsibleContent></Collapsible>
+            <ItemActions className="flex-wrap">
               {decisions.length === 0 ? <p>Codex 未提供可提交的决定，请停止当前测试。</p> : null}
               {decisions.map((decision) => (
-                <button
+                <Button
                   type="button"
                   key={decision}
-                  className={`button ${decision === "accept" ? "button-primary" : decision === "decline" ? "button-danger" : "button-secondary"}`}
+                  variant={decision === "accept" ? "default" : decision === "decline" ? "destructive" : "outline"}
                   onClick={() => void resolve(approval, decision)}
                   disabled={pending !== null}
                 >
                   {pending === key ? "正在提交…" : decisionLabels[decision]}
-                </button>
+                </Button>
               ))}
-            </div>
-          </article>
+            </ItemActions>
+          </ItemContent></Item>
         );
       })}
     </section>

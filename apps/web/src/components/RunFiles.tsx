@@ -1,3 +1,6 @@
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { useId, useState } from "react";
 import type { RunFile } from "@skillhub/shared";
 import { api } from "../api";
@@ -38,18 +41,19 @@ export function RunFiles({ runId, files }: { runId: string; files: RunFile[] }) 
   }
 
   return (
-    <section className="panel" aria-labelledby={titleId}>
-      <div className="section-heading">
+    <Card className="content-panel" aria-labelledby={titleId}>
+      <CardHeader>
         <div><span className="eyebrow">工作区变化</span><h2 id={titleId}>结果文件</h2></div>
         <span className="muted">{files.length} 个文件</span>
-      </div>
+      </CardHeader>
+      <CardContent>
       {error ? <ErrorBanner message={error} /> : null}
       {files.length === 0 ? <EmptyState title="没有结果文件" description="测试完成后，相对于初始工作区发生变化且可记录的文件会显示在这里。" /> : (
         <div className="result-files">
           {files.map((file) => (
             <article className="result-file" key={file.id}>
               <div className="result-file-info">
-                <div><span className={`badge file-${file.kind}`}>{kindLabels[file.kind]}</span><code>{file.path}</code></div>
+                <div><Badge variant="secondary">{kindLabels[file.kind]}</Badge><code>{file.path}</code></div>
                 <div className="result-file-meta">
                   <span>{formatBytes(file.size)}</span>
                   {file.mime ? <span>{file.mime}</span> : null}
@@ -57,8 +61,8 @@ export function RunFiles({ runId, files }: { runId: string; files: RunFile[] }) 
                 </div>
               </div>
               <div className="button-row">
-                {file.previewAvailable ? <button type="button" className="button button-small button-secondary" onClick={() => void loadPreview(file)} disabled={loadingId !== null}>{loadingId === file.id ? "正在读取…" : "预览"}</button> : null}
-                {file.artifactAvailable ? <a className="button button-small button-ghost" href={`/api/runs/${encodeURIComponent(runId)}/files/${encodeURIComponent(file.id)}/download`} download>下载</a> : <span className="muted">无下载副本</span>}
+                {file.previewAvailable ? <Button variant="outline" size="sm" type="button" onClick={() => void loadPreview(file)} disabled={loadingId !== null}>{loadingId === file.id ? "正在读取…" : "预览"}</Button> : null}
+                {file.artifactAvailable ? <Button variant="ghost" size="sm" nativeButton={false} render={<a href={`/api/runs/${encodeURIComponent(runId)}/files/${encodeURIComponent(file.id)}/download`} download></a>}>下载</Button> : <span className="muted">无下载副本</span>}
               </div>
             </article>
           ))}
@@ -69,12 +73,13 @@ export function RunFiles({ runId, files }: { runId: string; files: RunFile[] }) 
         <div className="file-preview">
           <div className="section-heading">
             <div><span className="eyebrow">文本预览</span><h3>{preview.path}</h3></div>
-            <button type="button" className="button button-small button-ghost" onClick={() => setPreview(null)}>关闭预览</button>
+            <Button variant="ghost" size="sm" type="button" onClick={() => setPreview(null)}>关闭预览</Button>
           </div>
           {preview.truncated ? <p className="inline-warning">预览内容已截断，完整内容请下载查看。</p> : null}
           <pre key={preview.fileId}>{preview.content}</pre>
         </div>
       ) : null}
-    </section>
+      </CardContent>
+    </Card>
   );
 }

@@ -1,4 +1,10 @@
+import { Button } from "@/components/ui/button";
+import { FieldGroup, Field, FieldLabel, FieldSet, FieldLegend } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useCallback, useEffect, useState } from "react";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import type { SkillSummary } from "@skillhub/shared";
 import { api, ApiError } from "../api";
 import { Link } from "../components/Link";
@@ -151,7 +157,7 @@ export function AgentFormPage({ id }: { id?: string }) {
         <Notice tone="warning">
           <div className="agent-conflict">
             <span>角色已被其他页面修改，本次保存未覆盖最新内容。刷新会放弃当前未保存修改。</span>
-            <button type="button" className="button button-secondary button-small" onClick={() => void load()} disabled={loading}>刷新最新角色</button>
+            <Button variant="outline" size="sm" type="button" onClick={() => void load()} disabled={loading}>刷新最新角色</Button>
           </div>
         </Notice>
       ) : null}
@@ -161,18 +167,19 @@ export function AgentFormPage({ id }: { id?: string }) {
         <EmptyState
           title="暂无可选 Skills"
           description="角色至少需要一个 Skill，请先同步团队课程目录后重试。"
-          action={<button type="button" className="button button-secondary" onClick={() => void load()}>重新读取</button>}
+          action={<Button variant="outline" type="button" onClick={() => void load()}>重新读取</Button>}
         />
       ) : (
         <form className="panel agent-form" onSubmit={(event) => { event.preventDefault(); void submit(); }}>
-          <div className="agent-form-fields">
-            <div className="field">
-              <label htmlFor="agent-name">角色名称</label>
-              <input id="agent-name" value={form.name} onChange={(event) => updateForm("name", event.target.value)} maxLength={100} required disabled={submitting} placeholder="例如：发布助手" />
-            </div>
-            <div className="field">
-              <label htmlFor="agent-id">英文目录标识</label>
-              <input
+          <FieldGroup>
+          <FieldGroup className="agent-form-fields">
+            <Field className="field">
+              <FieldLabel htmlFor="agent-name">角色名称</FieldLabel>
+              <Input id="agent-name" value={form.name} onChange={(event) => updateForm("name", event.target.value)} maxLength={100} required disabled={submitting} placeholder="例如：发布助手" />
+            </Field>
+            <Field className="field">
+              <FieldLabel htmlFor="agent-id">英文目录标识</FieldLabel>
+              <Input
                 id="agent-id"
                 value={form.id}
                 onChange={(event) => updateForm("id", event.target.value)}
@@ -185,25 +192,25 @@ export function AgentFormPage({ id }: { id?: string }) {
                 placeholder="release-assistant"
               />
               <p className="field-help">{editing ? "目录标识创建后不可修改。" : "最多 64 位，只能使用小写字母、数字和连字符。"}</p>
-            </div>
-          </div>
+            </Field>
+          </FieldGroup>
 
-          <div className="field">
-            <label htmlFor="agent-description">角色描述</label>
-            <textarea id="agent-description" value={form.description} onChange={(event) => updateForm("description", event.target.value)} rows={3} maxLength={500} required disabled={submitting} placeholder="说明这个角色适合完成什么任务" />
+          <Field className="field">
+            <FieldLabel htmlFor="agent-description">角色描述</FieldLabel>
+            <Textarea id="agent-description" value={form.description} onChange={(event) => updateForm("description", event.target.value)} rows={3} maxLength={500} required disabled={submitting} placeholder="说明这个角色适合完成什么任务" />
             <p className="field-help">{form.description.length} / 500 字</p>
-          </div>
+          </Field>
 
           <section className="agent-instructions" aria-labelledby="agent-instructions-title">
             <div className="agent-instructions-heading">
-              <div><label id="agent-instructions-title" htmlFor="agent-instructions">AGENTS.md 指令</label><p>用 Markdown 描述目标、流程、约束和验收标准。</p></div>
-              <div className="agent-editor-tabs" aria-label="指令显示方式">
-                <button type="button" aria-pressed={mode === "edit"} onClick={() => setMode("edit")} disabled={submitting}>编辑</button>
-                <button type="button" aria-pressed={mode === "preview"} onClick={() => setMode("preview")} disabled={submitting}>预览</button>
-              </div>
+              <div><FieldLabel id="agent-instructions-title" htmlFor="agent-instructions">AGENTS.md 指令</FieldLabel><p>用 Markdown 描述目标、流程、约束和验收标准。</p></div>
+              <ToggleGroup value={[mode]} onValueChange={(values) => { if (values[0] === "edit" || values[0] === "preview") setMode(values[0]); }} disabled={submitting} aria-label="指令显示方式">
+                <ToggleGroupItem value="edit">编辑</ToggleGroupItem>
+                <ToggleGroupItem value="preview">预览</ToggleGroupItem>
+              </ToggleGroup>
             </div>
             {mode === "edit" ? (
-              <textarea id="agent-instructions" value={form.instructions} onChange={(event) => updateForm("instructions", event.target.value)} rows={18} maxLength={100000} required disabled={submitting} spellCheck={false} placeholder={"# 角色目标\n\n## 工作流程\n\n## 约束与验收标准"} />
+              <Textarea id="agent-instructions" value={form.instructions} onChange={(event) => updateForm("instructions", event.target.value)} rows={18} maxLength={100000} required disabled={submitting} spellCheck={false} placeholder={"# 角色目标\n\n## 工作流程\n\n## 约束与验收标准"} />
             ) : (
               <div className="agent-instructions-preview">
                 {form.instructions.trim() ? <Markdown>{form.instructions}</Markdown> : <p className="muted">暂无指令内容</p>}
@@ -212,38 +219,39 @@ export function AgentFormPage({ id }: { id?: string }) {
             <p className="field-help">{form.instructions.length} / 100000 字</p>
           </section>
 
-          <fieldset className="agent-skill-picker" disabled={submitting}>
-            <legend>选择 Skills</legend>
+          <FieldSet className="agent-skill-picker" disabled={submitting}>
+            <FieldLegend>选择 Skills</FieldLegend>
             <p className="field-help">已选择 {form.skillIds.length} / 20 个，培训时会固定各 Skill 的 commit。</p>
             <div className="agent-skill-options">
               {skills.map((skill) => {
                 const checked = form.skillIds.includes(skill.id);
                 return (
-                  <label className={`agent-skill-option${checked ? " agent-skill-option-selected" : ""}`} key={skill.id}>
-                    <input type="checkbox" checked={checked} onChange={() => toggleSkill(skill.id)} disabled={!checked && form.skillIds.length >= 20} />
+                  <FieldLabel className={`agent-skill-option${checked ? " agent-skill-option-selected" : ""}`} key={skill.id}>
+                    <Checkbox checked={checked} onCheckedChange={() => toggleSkill(skill.id)} disabled={submitting || (!checked && form.skillIds.length >= 20)} />
                     <span><strong>{skill.displayName}</strong><code>{skill.id}</code><small>{skill.description}</small></span>
-                  </label>
+                  </FieldLabel>
                 );
               })}
               {missingSkills.map((skillId) => (
-                <label className="agent-skill-option agent-skill-option-selected" key={skillId}>
-                  <input type="checkbox" checked onChange={() => toggleSkill(skillId)} />
+                <FieldLabel className="agent-skill-option agent-skill-option-selected" key={skillId}>
+                  <Checkbox checked onCheckedChange={() => toggleSkill(skillId)} disabled={submitting} />
                   <span><strong>{skillId}</strong><code>{skillId}</code><small>此 Skill 不在当前目录中；取消选择后不能重新添加。</small></span>
-                </label>
+                </FieldLabel>
               ))}
             </div>
-          </fieldset>
+          </FieldSet>
 
           <div className="form-footer agent-form-footer">
             <p>{editing ? "保存使用 revision 冲突检查，避免覆盖其他人的修改。" : "创建后可先检查 AGENTS.md，再开始本机培训。"}</p>
             <div className="button-row">
-              <Link className="button button-secondary" to={backTo}>取消</Link>
-              <button type="submit" className="button button-primary" disabled={submitting || form.skillIds.length === 0}>
+              <Button variant="outline" nativeButton={false} render={<Link to={backTo} />}>取消</Button>
+              <Button variant="default" type="submit" disabled={submitting || form.skillIds.length === 0}>
                 {submitting ? "正在保存…" : editing ? "保存修改" : "创建角色"}
-              </button>
+              </Button>
             </div>
           </div>
-        </form>
+        </FieldGroup>
+</form>
       )}
     </div>
   );

@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import {
   forwardRef,
   useCallback,
@@ -150,7 +151,6 @@ export const ChatComposerEditor = forwardRef<ChatComposerEditorHandle, {
     if (!editor || readValue(editor) === value) return;
     editor.replaceChildren();
     if (value) editor.append(document.createTextNode(value));
-    lastSkillIds.current = "";
     syncSkills();
     closeMention();
   }, [closeMention, syncSkills, value]);
@@ -194,6 +194,7 @@ export const ChatComposerEditor = forwardRef<ChatComposerEditorHandle, {
   }, [closeMention]);
 
   function keyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.nativeEvent.isComposing) return;
     if (mentionOpen) {
       if (event.key === "Escape") {
         event.preventDefault();
@@ -244,6 +245,7 @@ export const ChatComposerEditor = forwardRef<ChatComposerEditorHandle, {
       <div
         ref={editorRef}
         id="chat-task"
+        data-slot="input-group-control"
         className="composer-editor"
         contentEditable={!disabled}
         role="textbox"
@@ -264,7 +266,7 @@ export const ChatComposerEditor = forwardRef<ChatComposerEditorHandle, {
           <div className="composer-skills-heading"><strong>调用 Skill</strong><span>输入 @{mentionQuery} 筛选</span></div>
           <div className="composer-skill-options">
             {matchingSkills.map((skill, index) => (
-              <button
+              <Button variant="ghost"
                 id={`chat-skill-option-${skill.skillId}`}
                 type="button"
                 role="option"
@@ -276,7 +278,7 @@ export const ChatComposerEditor = forwardRef<ChatComposerEditorHandle, {
                 onClick={() => insertSkill(skill.skillId)}
               >
                 <span><strong>@{skill.skillId}</strong><small>{skill.path}</small></span>
-              </button>
+              </Button>
             ))}
             {matchingSkills.length === 0 ? <p className="composer-skill-empty">没有匹配的 Skill</p> : null}
           </div>
