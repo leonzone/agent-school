@@ -47,4 +47,4 @@ Node ≥22.13、pnpm 10.9、全 ESM、TypeScript 7。后端 Fastify 5 + node:sql
 - 聊天正文与输入框最大宽度为 800px 并居中；超过 20 轮且聊天区域至少 960px 宽时，在正文左侧留白显示刻度导航。使用 MessageScroller 的定位与可见性 API；启用导航时保留完整消息高度，避免延迟布局造成跳转偏移。
 - 改 `packages/shared` 后需先 build（dev/typecheck 脚本已内置此前置）。
 - 前端文案使用中文，遵循全局中文排版规范；页面导航「能力中心」含 Skills / MCP / 连接器三个 tab，后两者为预留。
-- 项目暂无 ROADMAP.md / README.md；「更新文档」时只需维护本文件。
+- 项目入口文档为 README.md；功能、启动方式或项目约定变化时，同步维护 README.md 与本文件。

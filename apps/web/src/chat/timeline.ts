@@ -314,4 +314,3 @@ export function buildTimeline(events: RunEvent[]): TimelineEntry[] {
   }
   return [...entries.values()].sort((left, right) => left.seq - right.seq);
 }
-
