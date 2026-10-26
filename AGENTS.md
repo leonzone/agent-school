@@ -40,4 +40,4 @@ Node ≥22.13、pnpm 10.9、全 ESM、TypeScript 7。后端 Fastify 5 + node:sql
 - 无测试框架、无 lint 配置；改动验证以 `pnpm build` + `pnpm typecheck` 为准，必要时手动起 `pnpm dev` 验证页面。
 - 改 `packages/shared` 后需先 build（dev/typecheck 脚本已内置此前置）。
 - 前端文案使用中文，遵循全局中文排版规范；页面导航「能力中心」含 Skills / MCP / 连接器三个 tab，后两者为预留。
-- 项目暂无 ROADMAP.md / README.md；「更新文档」时只需维护本文件。
+- 项目入口文档为 README.md；功能、启动方式或项目约定变化时，同步维护 README.md 与本文件。
