@@ -1,0 +1,24 @@
+{
+  "name": "reiser-skillhub",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.9.0",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @skillhub/shared build && pnpm --filter @skillhub/codex-protocol build && concurrently -k -n catalog,bridge,web \"pnpm --filter @skillhub/catalog dev\" \"pnpm --filter @skillhub/bridge dev\" \"pnpm --filter @skillhub/web dev\"",
+    "build": "pnpm --filter @skillhub/shared build && pnpm --filter @skillhub/codex-protocol build && pnpm --filter @skillhub/catalog build && pnpm --filter @skillhub/bridge build && pnpm --filter @skillhub/web build",
+    "typecheck": "pnpm --filter @skillhub/shared build && pnpm --filter @skillhub/codex-protocol build && pnpm -r --if-present typecheck",
+    "start": "concurrently -k -n catalog,bridge \"pnpm --filter @skillhub/catalog start\" \"pnpm --filter @skillhub/bridge start\"",
+    "demo:init": "node scripts/init-demo.mjs",
+    "codex:generate": "codex app-server generate-ts --out packages/codex-protocol/src/generated"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "concurrently": "^10.0.6",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}
