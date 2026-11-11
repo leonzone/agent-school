@@ -52,4 +52,3 @@ export async function readSkillUpload(fileName: string, content: Buffer): Promis
   validateSkillFiles(files);
   return files;
 }
-
