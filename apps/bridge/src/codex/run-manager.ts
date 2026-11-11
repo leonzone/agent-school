@@ -53,6 +53,7 @@ type ActiveRun = {
   task: string;
   before: WorkspaceSnapshot | null;
   client: AppServerClient | null;
+  codexPath: string | null;
   threadId: string | null;
   turnId: string | null;
   finalText: string | null;
@@ -180,6 +181,7 @@ export class RunManager {
       task: options.task,
       before: null,
       client: null,
+      codexPath: null,
       threadId: conversation?.threadId ?? null,
       turnId: null,
       finalText: null,
@@ -197,6 +199,7 @@ export class RunManager {
       if (!codex.available || !codex.compatible || !codex.loggedIn) {
         throw new HttpError(400, "CODEX_NOT_READY", codex.error ?? "Codex 尚未就绪");
       }
+      active.codexPath = codex.executablePath;
       if (agentId !== undefined && active.agent) {
         active.agent = await this.training.assertUsable(agentId, active.agent.revision);
         active.skill = primarySkill(active.agent);
@@ -336,7 +339,7 @@ export class RunManager {
         onStderr: (message) => {
           this.store.appendEvent(active.id, "codexStderr", null, { message });
         },
-      });
+      }, active.codexPath ?? undefined);
       active.client = client;
       this.ensureRunning(active);
 

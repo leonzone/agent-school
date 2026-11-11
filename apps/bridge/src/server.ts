@@ -22,6 +22,9 @@ import { registerFeedbackRoutes } from "./routes/feedback.js";
 import { registerInstallationRoutes } from "./routes/installations.js";
 import { registerRunRoutes } from "./routes/runs.js";
 import { registerSystemRoutes } from "./routes/system.js";
+import { registerSkillHubRoutes } from "./routes/skillhub.js";
+import { SkillHubRepository } from "./skillhub/catalog.js";
+import { SkillInstaller } from "./skillhub/installations.js";
 import { registerTrainingRoutes } from "./routes/training.js";
 import { RunStore } from "./runs.js";
 import { TrainingService } from "./training.js";
@@ -111,6 +114,7 @@ registerInstallationRoutes(app, installations);
 registerConversationRoutes(app, conversations, runManager, runStore);
 registerRunRoutes(app, runManager, runStore, training);
 registerSystemRoutes(app, () => runManager.activeRunId);
+registerSkillHubRoutes(app, new SkillHubRepository(config.skillHubRoot), new SkillInstaller(config.skillsRoot, installations));
 
 if (existsSync(config.webDist)) {
   await app.register(fastifyStatic, {

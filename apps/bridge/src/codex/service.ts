@@ -3,13 +3,13 @@ import path from "node:path";
 import { promisify } from "node:util";
 import type { v2 } from "@skillhub/codex-protocol";
 import type { SystemStatus } from "@skillhub/shared";
-import { config } from "../config.js";
 import { AppServerClient } from "./app-server-client.js";
+import { resolveCodexExecutable, type CodexExecutable } from "./executable.js";
 
 const execFileAsync = promisify(execFile);
 
-export async function readCodexVersion(): Promise<string> {
-  const { stdout } = await execFileAsync(config.codexPath, ["--version"], {
+export async function readCodexVersion(codexPath: string): Promise<string> {
+  const { stdout } = await execFileAsync(codexPath, ["--version"], {
     timeout: 5_000,
     windowsHide: true,
   });
@@ -20,30 +20,23 @@ export async function readCodexVersion(): Promise<string> {
 
 export async function getCodexStatus(): Promise<SystemStatus["codex"]> {
   let version: string | null = null;
+  let executable: CodexExecutable | null = null;
   try {
-    version = await readCodexVersion();
-    const compatible = version === config.verifiedCodexVersion;
-    if (!compatible) {
-      return {
-        available: true,
-        version,
-        compatible: false,
-        loggedIn: false,
-        accountType: null,
-        error: `当前版本未经验证，请使用 codex-cli ${config.verifiedCodexVersion}`,
-      };
-    }
-    const client = await AppServerClient.start();
+    executable = await resolveCodexExecutable();
+    version = await readCodexVersion(executable.path);
+    const client = await AppServerClient.start({}, executable.path);
     try {
       const account = await client.call<v2.GetAccountResponse>("account/read", { refreshToken: false });
       return {
         available: true,
+        executablePath: executable.path,
+        source: executable.source,
         version,
-        compatible,
+        compatible: true,
         loggedIn: account.account !== null || !account.requiresOpenaiAuth,
         accountType: account.account?.type ?? null,
         error: account.account === null && account.requiresOpenaiAuth
-          ? "Codex 尚未登录，请先在终端运行 codex login"
+          ? "Codex 尚未登录，请使用检测到的 Codex 程序登录后重试"
           : null,
       };
     } finally {
@@ -52,8 +45,10 @@ export async function getCodexStatus(): Promise<SystemStatus["codex"]> {
   } catch (error) {
     return {
       available: version !== null,
+      executablePath: executable?.path ?? null,
+      source: executable?.source ?? null,
       version,
-      compatible: version === config.verifiedCodexVersion,
+      compatible: false,
       loggedIn: false,
       accountType: null,
       error: error instanceof Error ? error.message : "无法连接 Codex",

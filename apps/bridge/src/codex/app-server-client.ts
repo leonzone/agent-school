@@ -6,7 +6,7 @@ import type {
   ServerNotification,
   ServerRequest,
 } from "@skillhub/codex-protocol";
-import { config } from "../config.js";
+import { resolveCodexExecutable } from "./executable.js";
 
 type PendingRequest = {
   resolve: (value: unknown) => void;
@@ -89,8 +89,9 @@ export class AppServerClient {
     });
   }
 
-  static async start(handlers: AppServerHandlers = {}): Promise<AppServerClient> {
-    const client = new AppServerClient(handlers, config.codexPath);
+  static async start(handlers: AppServerHandlers = {}, codexPath?: string): Promise<AppServerClient> {
+    const executablePath = codexPath ?? (await resolveCodexExecutable()).path;
+    const client = new AppServerClient(handlers, executablePath);
     try {
       await client.call("initialize", {
         clientInfo: {

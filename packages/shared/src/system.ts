@@ -3,6 +3,8 @@ import { z } from "zod";
 export const systemStatusSchema = z.object({
   codex: z.object({
     available: z.boolean(),
+    executablePath: z.string().nullable(),
+    source: z.enum(["configured", "path", "desktop"]).nullable(),
     version: z.string().nullable(),
     compatible: z.boolean(),
     loggedIn: z.boolean(),

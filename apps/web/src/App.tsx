@@ -18,6 +18,7 @@ import { NewRunPage } from "./pages/NewRunPage";
 import { RunDetailPage } from "./pages/RunDetailPage";
 import { RunsPage } from "./pages/RunsPage";
 import { SkillDetailPage } from "./pages/SkillDetailPage";
+import { SkillHubPage } from "./pages/SkillHubPage";
 import { TrainingsPage } from "./pages/TrainingsPage";
 import { parseRoute, useLocation, type Route } from "./router";
 import { errorMessage } from "./utils";
@@ -32,6 +33,7 @@ function RouteContent({ route }: { route: Route }) {
     case "agentChat": return <AgentTestingPage id={route.id} chat />;
     case "trainings": return <TrainingsPage agentId={route.agentId} />;
     case "catalog": return <CatalogPage />;
+    case "skillHub": return <SkillHubPage key={route.id ?? "catalog"} {...(route.id ? { id: route.id } : {})} />;
     case "codex": return <CodexPage />;
     case "skill": return <SkillDetailPage id={route.id} />;
     case "installed": return <InstalledPage />;
@@ -91,7 +93,7 @@ export function App() {
   return (
     <SystemStatusContext.Provider value={{ status, refresh: refreshStatus }}>
       <a className="skip-link" href="#main-content">跳到主要内容</a>
-      <header className="site-header">
+      <header className="site-header" data-page={route.name}>
         <div className="header-inner">
           <Link className="brand" to="/" aria-label="Agent School 学习中心首页">
             <span className="brand-mark" aria-hidden="true" />
@@ -102,6 +104,7 @@ export function App() {
               <NavigationMenuItem><NavigationMenuLink active={pathname.startsWith("/trainings")} render={<Link to="/trainings" />}>我的员工</NavigationMenuLink></NavigationMenuItem>
               <NavigationMenuItem><NavigationMenuLink active={pathname === "/" || pathname.startsWith("/agents")} render={<Link to="/" />}>培训中心</NavigationMenuLink></NavigationMenuItem>
               <NavigationMenuItem><NavigationMenuLink active={pathname.startsWith("/skills")} render={<Link to="/skills" />}>能力中心</NavigationMenuLink></NavigationMenuItem>
+              <NavigationMenuItem><NavigationMenuLink active={pathname.startsWith("/skillhub")} render={<Link to="/skillhub" />}>SkillHub</NavigationMenuLink></NavigationMenuItem>
               <NavigationMenuItem><NavigationMenuLink active={pathname.startsWith("/runs")} render={<Link to="/runs" />}>培训记录</NavigationMenuLink></NavigationMenuItem>
               <NavigationMenuItem><NavigationMenuLink active={pathname === "/feedback"} render={<Link to="/feedback" />}>团队反馈</NavigationMenuLink></NavigationMenuItem>
               <NavigationMenuItem><NavigationMenuLink active={pathname === "/codex"} render={<Link to="/codex" />}>模型管理</NavigationMenuLink></NavigationMenuItem>

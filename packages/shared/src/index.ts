@@ -6,3 +6,4 @@ export * from "./feedback.js";
 export * from "./installations.js";
 export * from "./runs.js";
 export * from "./system.js";
+export * from "./skillhub.js";

@@ -1,5 +1,3 @@
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
 import type { v2 } from "@skillhub/codex-protocol";
 import {
   codexApprovalPolicySchema,
@@ -20,8 +18,6 @@ import { config } from "../config.js";
 import { HttpError } from "../errors.js";
 import { AppServerClient, CodexRpcError } from "./app-server-client.js";
 import { getCodexStatus } from "./service.js";
-
-const execFileAsync = promisify(execFile);
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "无法完成 Codex 配置操作";
@@ -48,27 +44,16 @@ function assertReady(codex: SystemStatus["codex"]): void {
   }
 }
 
-async function resolveCliPath(): Promise<string | null> {
-  try {
-    const { stdout } = await execFileAsync("which", [config.codexPath], {
-      timeout: 5_000,
-      windowsHide: true,
-    });
-    return stdout.trim() || null;
-  } catch {
-    return null;
-  }
-}
-
 export class CodexSettingsService {
   constructor(private readonly getActiveRunId: () => string | null) {}
 
   async read(): Promise<CodexConfigResponse> {
-    const [codex, cliPath] = await Promise.all([getCodexStatus(), resolveCliPath()]);
+    const codex = await getCodexStatus();
+    const cliPath = codex.executablePath;
     if (!codex.available || !codex.compatible) {
       return codexConfigResponseSchema.parse({
         codex,
-        cliCommand: config.codexPath,
+        cliCommand: cliPath ?? config.codexPath ?? "codex",
         cliPath,
         configFilePath: null,
         configVersion: null,
@@ -80,12 +65,13 @@ export class CodexSettingsService {
         warnings: [codex.error ?? "Codex 不可用"],
       });
     }
-    return this.withClient((client) => this.readWithClient(client, codex, cliPath));
+    return this.withClient((client) => this.readWithClient(client, codex, cliPath), cliPath);
   }
 
   async update(input: CodexConfigUpdate): Promise<CodexConfigResponse> {
     this.assertNoActiveRun();
-    const [codex, cliPath] = await Promise.all([getCodexStatus(), resolveCliPath()]);
+    const codex = await getCodexStatus();
+    const cliPath = codex.executablePath;
     assertReady(codex);
 
     return this.withClient(async (client) => {
@@ -121,13 +107,13 @@ export class CodexSettingsService {
         );
       }
       return codexConfigResponseSchema.parse(updated);
-    });
+    }, cliPath);
   }
 
-  private async withClient<T>(operation: (client: AppServerClient) => Promise<T>): Promise<T> {
+  private async withClient<T>(operation: (client: AppServerClient) => Promise<T>, codexPath: string | null): Promise<T> {
     let client: AppServerClient;
     try {
-      client = await AppServerClient.start();
+      client = await AppServerClient.start({}, codexPath ?? undefined);
     } catch (error) {
       throw new HttpError(503, "CODEX_UNAVAILABLE", errorMessage(error));
     }
@@ -213,7 +199,7 @@ export class CodexSettingsService {
 
     return codexConfigResponseSchema.parse({
       codex,
-      cliCommand: config.codexPath,
+      cliCommand: cliPath ?? config.codexPath ?? "codex",
       cliPath,
       configFilePath: userLayer?.name.type === "user" ? userLayer.name.file : null,
       configVersion: userLayer?.version ?? null,

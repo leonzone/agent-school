@@ -203,12 +203,13 @@ export function CodexPage() {
         <dl className="definition-grid">
           <Definition label="Codex 版本"><code>{codex?.version ?? "未知"}</code></Definition>
           <Definition label="登录状态"><span>{codex?.loggedIn ? `已登录（${codex.accountType ?? "账号"}）` : "未登录"}</span></Definition>
-          <Definition label="CLI 命令"><code>{data?.cliCommand ?? "等待检测"}</code></Definition>
+          <Definition label="程序来源"><span>{codex?.source === "configured" ? "显式配置" : codex?.source === "path" ? "PATH 中的 CLI" : codex?.source === "desktop" ? "Desktop 内置程序" : "未发现"}</span></Definition>
+          <Definition label="CLI 命令"><code className="break-all">{data?.cliCommand ?? "等待检测"}</code></Definition>
           <Definition label="CLI 路径"><code className="break-all">{data?.cliPath ?? "未解析"}</code></Definition>
           <Definition label="用户配置文件" wide><code className="break-all">{data?.configFilePath ?? "尚未读取"}</code></Definition>
         </dl>
         {codex?.error ? <p className="field-help">{codex.error}</p> : null}
-        <p className="field-help">CLI 命令由 Bridge 启动环境决定。需要更换时，请设置 SKILLHUB_CODEX_PATH 并重启 Bridge。</p>
+        <p className="field-help">按显式配置、PATH、macOS Desktop 内置程序的顺序查找 Codex。需要指定程序时，请设置 SKILLHUB_CODEX_PATH 并重启 Bridge。</p>
         </CardContent>
       </Card>
 
@@ -225,7 +226,7 @@ export function CodexPage() {
       {data && !data.settings ? (
         <EmptyState
           title="Codex 配置暂不可用"
-          description="请先检查上方 CLI 版本和运行状态，再重新检测。"
+          description="请先检查上方 CLI 连接和运行状态，再重新检测。"
           action={<Button variant="outline" type="button" onClick={reload} disabled={busy}>重新检测</Button>}
         />
       ) : null}

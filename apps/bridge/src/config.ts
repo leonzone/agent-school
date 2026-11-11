@@ -25,6 +25,7 @@ export const config = {
   home,
   databasePath: path.join(home, "bridge.db"),
   downloadsDir: path.join(home, "downloads"),
+  skillHubRoot: path.join(home, "skillhub"),
   runsDir: path.join(home, "runs"),
   skillsRoot: path.resolve(
     process.env.SKILLHUB_SKILLS_ROOT ?? path.join(os.homedir(), ".agents", "skills"),
@@ -33,8 +34,7 @@ export const config = {
     process.env.SKILLHUB_AGENTS_ROOT ?? path.join(os.homedir(), "AgentSchool"),
   ),
   catalogUrl: (process.env.SKILLHUB_CATALOG_URL ?? "http://127.0.0.1:43110").replace(/\/$/, ""),
-  codexPath: process.env.SKILLHUB_CODEX_PATH ?? "codex",
-  verifiedCodexVersion: "0.163.0",
+  codexPath: process.env.SKILLHUB_CODEX_PATH,
   webDist: path.join(projectRoot, "apps", "web", "dist"),
   maintenanceClonePath: path.join(projectRoot, "var", "demo", "course"),
   allowedOrigins: new Set([

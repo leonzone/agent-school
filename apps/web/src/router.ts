@@ -9,6 +9,7 @@ export type Route =
   | { name: "agentChat"; id: string; conversationId?: string }
   | { name: "trainings"; agentId?: string }
   | { name: "catalog" }
+  | { name: "skillHub"; id?: string }
   | { name: "codex" }
   | { name: "skill"; id: string }
   | { name: "installed" }
@@ -62,12 +63,17 @@ export function parseRoute(pathname: string): Route {
   if (path === "/agents/new") return { name: "agentNew" };
   if (path === "/trainings") return { name: "trainings" };
   if (path === "/skills") return { name: "catalog" };
+  if (path === "/skillhub") return { name: "skillHub" };
   if (path === "/skills/installed") return { name: "installed" };
   if (path === "/codex") return { name: "codex" };
   if (path === "/runs") return { name: "runs" };
   if (path === "/feedback") return { name: "feedback" };
 
   const parts = path.split("/").filter(Boolean);
+  if (parts.length === 2 && parts[0] === "skillhub") {
+    const id = decode(parts[1] ?? "");
+    return id ? { name: "skillHub", id } : { name: "notFound" };
+  }
   if (parts.length === 2 && parts[0] === "trainings") {
     const agentId = decode(parts[1] ?? "");
     return agentId ? { name: "trainings", agentId } : { name: "notFound" };

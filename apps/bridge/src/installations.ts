@@ -258,7 +258,7 @@ export class InstallationService {
     }
   }
 
-  private async withLock<T>(skillId: string, operation: () => Promise<T>): Promise<T> {
+  async withLock<T>(skillId: string, operation: () => Promise<T>): Promise<T> {
     if (this.activeRunSkillId === skillId) {
       throw new HttpError(409, "SKILL_RUN_ACTIVE", "该 Skill 正在测试中，完成或停止测试后才能安装、更新或卸载");
     }

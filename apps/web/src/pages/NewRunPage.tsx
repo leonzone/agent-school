@@ -123,7 +123,7 @@ export function NewRunPage({ skillId, agentId, embedded = false }: { skillId?: s
       <Notice tone={codexReady ? "info" : "warning"}>
         <strong>本地文件与 Codex 提示</strong>
         <p>Codex 将直接读取和修改工作目录中的文件；上传材料会保存到本次测试目录。请提前备份重要内容。</p>
-        <p>当前 Codex：{status ? (codexReady ? `已就绪${status.codex.version ? `（${status.codex.version}）` : ""}` : "未就绪，请检查可用性、版本和登录状态") : "状态检查中"}。</p>
+        <p>当前 Codex：{status ? (codexReady ? `已就绪${status.codex.version ? `（${status.codex.version}）` : ""}` : "未就绪，请检查 CLI、连接和登录状态") : "状态检查中"}。</p>
       </Notice>
 
       <form className="panel run-form" onSubmit={(event) => { event.preventDefault(); void submit(); }}>

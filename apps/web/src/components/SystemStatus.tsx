@@ -24,7 +24,7 @@ export function EnvironmentStatus({ status }: { status: SystemStatus | null }) {
     : !status.codex.available
       ? "不可用"
       : !status.codex.compatible
-        ? "版本不兼容"
+        ? "连接失败"
         : !status.codex.loggedIn
           ? "未登录"
           : "已就绪";

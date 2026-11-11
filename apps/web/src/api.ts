@@ -25,6 +25,13 @@ import type {
   TrainingListResponse,
   TrainingResponse,
   VersionsResponse,
+  SkillHubCatalog,
+  SkillHubQuery,
+  HubSkillDetail,
+  HubInstallation,
+  HubInstallResult,
+  HubInstallPlan,
+  HubMcpInfo,
 } from "@skillhub/shared";
 
 let sessionPromise: Promise<void> | null = null;
@@ -108,6 +115,19 @@ function jsonRequest(method: string, body?: unknown): RequestInit {
 }
 
 export const api = {
+  skillHubMcp: () => request<HubMcpInfo>("/api/skillhub/mcp"),
+  skillHubCatalog: (query: SkillHubQuery) => request<SkillHubCatalog>(
+    `/api/skillhub/skills?${new URLSearchParams(Object.entries(query).map(([key, value]) => [key, String(value)]))}`,
+  ),
+  hubSkillDetail: (id: string, version?: string) => request<HubSkillDetail>(`/api/skillhub/skills/${encodeURIComponent(id)}${version ? `?version=${encodeURIComponent(version)}` : ""}`),
+  uploadHubSkill: (body: FormData) => request<HubSkillDetail>("/api/skillhub/uploads", { method: "POST", body }),
+  hubInstallations: () => request<{ installations: HubInstallation[] }>("/api/skillhub/installations"),
+  hubInstallPlan: (id: string, version: string) => request<HubInstallPlan>(
+    `/api/skillhub/skills/${encodeURIComponent(id)}/plan`, jsonRequest("POST", { version }),
+  ),
+  installHubSkill: (planId: string) => request<HubInstallResult>(
+    "/api/skillhub/installations", jsonRequest("POST", { planId, confirm: true }),
+  ),
   systemStatus: () => request<SystemStatus>("/api/system/status"),
   codexConfig: () => request<CodexConfigResponse>("/api/codex/config"),
   updateCodexConfig: (input: CodexConfigUpdate) => request<CodexConfigResponse>(
